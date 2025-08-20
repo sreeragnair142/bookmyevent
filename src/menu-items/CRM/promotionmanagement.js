@@ -21,20 +21,19 @@ const Promotionmgt = {
   title: 'Promotion Management',
   type: 'group',
   children: [
-{
-  id: 'promotion-banners',
-  title: 'Banners',
-  type: 'item',
-  url: '/promotions/Banners',  // matches the route
-  icon: icons.IconPhoto,
-  breadcrumbs: false
-}
-,
+    {
+      id: 'promotion-banners',
+      title: 'Banners',
+      type: 'item',
+      url: '/promotions/Banners',  // Matches the route
+      icon: icons.IconPhoto,
+      breadcrumbs: false
+    },
     {
       id: 'promotion-coupons',
       title: 'Coupons',
       type: 'item',
-      url: '/promotions/coupons',
+      url: '/promotions/Coupons',  // Matches the route
       icon: icons.IconTicket,
       breadcrumbs: false
     },
@@ -42,7 +41,7 @@ const Promotionmgt = {
       id: 'promotion-cashback',
       title: 'Cashback',
       type: 'item',
-      url: '/promotions/cashback',
+      url: '/promotions/cashback', // Assuming a route exists or will be added
       icon: icons.IconCash,
       breadcrumbs: false
     },
@@ -50,7 +49,7 @@ const Promotionmgt = {
       id: 'promotion-push-notifications',
       title: 'Push Notifications',
       type: 'item',
-      url: '/promotions/push-notifications',
+      url: '/promotions/PushNotification', // Matches the route
       icon: icons.IconBell,
       breadcrumbs: false
     }

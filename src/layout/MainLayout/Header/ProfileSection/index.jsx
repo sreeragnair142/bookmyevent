@@ -127,6 +127,7 @@ export default function ProfileSection() {
           px: 2,
           py: 1,
           fontWeight: 500,
+            ml: 3,
           '&:hover': { background: theme.palette.primary.dark }
         }}
       >

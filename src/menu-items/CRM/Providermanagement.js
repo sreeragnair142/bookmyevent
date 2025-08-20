@@ -1,10 +1,10 @@
 // assets
 import {
-  IconUserPlus,      // new provider request
-  IconUserCheck,     // add new provider
-  IconUsers,         // providers list
-  IconUpload,        // bulk import
-  IconDownload       // bulk export
+  IconUserPlus,      
+  IconUserCheck,     
+  IconUsers,         
+  IconUpload,        
+  IconDownload       
 } from '@tabler/icons-react';
 
 // constants
@@ -27,7 +27,7 @@ const Providermgt = {
       id: 'new-providers-request',
       title: 'New Providers Request',
       type: 'item',
-      url: '/providers/new-requests',
+      url: '/providers/new',
       icon: icons.IconUserPlus,
       breadcrumbs: false
     },
