@@ -85,7 +85,7 @@ export default function NotificationSection() {
 
   return (
     <>
-      <Box sx={{ ml: 2 }}>
+      <Box sx={{ ml: 4 }}> {/* Increased margin-left from 2 to 4 for more gap */}
         <Avatar
           variant="rounded"
           sx={{

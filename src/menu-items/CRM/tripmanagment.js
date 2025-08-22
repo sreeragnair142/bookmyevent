@@ -47,27 +47,11 @@ const tripmanagemet = {
   id: 'tripmanagemet',
   type: 'group',
   children: [
-    // {
-    //   id: 'main-dashboard',
-    //   title: 'Trip Management',
-    //   type: 'item',
-    //   url: '/dashboard',
-    //   icon: icons.IconDashboard,
-    //   breadcrumbs: false
-    // },
-    // {
-    //   id: 'statistics',
-    //   title: 'Statistics',
-    //   type: 'item',
-    //   url: '/statistics',
-    //   icon: icons.IconGraph,
-    //   breadcrumbs: false
-    // },
     {
       id: 'Trips',
       title: 'Trips',
       type: 'collapse',
-      icon: icons.IconUserPlus,
+      icon: icons.IconBuildingSkyscraper,  // <- changed icon here
       children: [
         {
           id: 'all-leads',
@@ -105,7 +89,6 @@ const tripmanagemet = {
           type: 'item',
           url: '/leads/converted'
         },
-
         {
           id: 'converted',
           title: 'Canceled',

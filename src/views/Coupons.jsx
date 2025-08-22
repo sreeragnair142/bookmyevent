@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -16,45 +16,50 @@ import {
   TableCell,
   TableBody,
   Paper,
-} from '@mui/material';
+  TableContainer,
+  useMediaQuery,
+  Stack,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 const Coupons = () => {
   const [coupons, setCoupons] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    couponType: '',
-    store: '',
-    customer: '',
-    code: '',
-    limit: '',
-    startDate: '',
-    expireDate: '',
-    discountType: '',
-    minPurchase: '',
-    discount: '',
-    maxDiscount: '',
+    title: "",
+    couponType: "",
+    store: "",
+    customer: "",
+    code: "",
+    limit: "",
+    startDate: "",
+    expireDate: "",
+    discountType: "",
+    minPurchase: "",
+    discount: "",
+    maxDiscount: "",
   });
 
-  const handleOpen = () => {
-    setOpen(true);
-  };
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm")); // responsive dialog
+
+  const handleOpen = () => setOpen(true);
 
   const handleClose = () => {
     setOpen(false);
     setFormData({
-      title: '',
-      couponType: '',
-      store: '',
-      customer: '',
-      code: '',
-      limit: '',
-      startDate: '',
-      expireDate: '',
-      discountType: '',
-      minPurchase: '',
-      discount: '',
-      maxDiscount: '',
+      title: "",
+      couponType: "",
+      store: "",
+      customer: "",
+      code: "",
+      limit: "",
+      startDate: "",
+      expireDate: "",
+      discountType: "",
+      minPurchase: "",
+      discount: "",
+      maxDiscount: "",
     });
   };
 
@@ -69,13 +74,19 @@ const Coupons = () => {
   };
 
   return (
-    <Box p={3}>
+    <Box p={2}>
       <Typography variant="h4" gutterBottom>
         Coupons
       </Typography>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={fullScreen} // responsive dialog
+      >
         <DialogTitle>Add New Coupon</DialogTitle>
         <DialogContent dividers>
           <TextField
@@ -84,15 +95,15 @@ const Coupons = () => {
             name="title"
             value={formData.title}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <Select
             fullWidth
             name="couponType"
             value={formData.couponType}
             onChange={handleChange}
-            margin="dense"
             displayEmpty
+            sx={{ mb: 2 }}
           >
             <MenuItem value="">--Select coupon type--</MenuItem>
             <MenuItem value="fixed">Fixed</MenuItem>
@@ -103,8 +114,8 @@ const Coupons = () => {
             name="store"
             value={formData.store}
             onChange={handleChange}
-            margin="dense"
             displayEmpty
+            sx={{ mb: 2 }}
           >
             <MenuItem value="">--Select store--</MenuItem>
             <MenuItem value="store1">Store 1</MenuItem>
@@ -115,8 +126,8 @@ const Coupons = () => {
             name="customer"
             value={formData.customer}
             onChange={handleChange}
-            margin="dense"
             displayEmpty
+            sx={{ mb: 2 }}
           >
             <MenuItem value="">Select customer</MenuItem>
             <MenuItem value="customer1">Customer 1</MenuItem>
@@ -128,7 +139,7 @@ const Coupons = () => {
             name="code"
             value={formData.code}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -136,7 +147,7 @@ const Coupons = () => {
             name="limit"
             value={formData.limit}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -146,7 +157,7 @@ const Coupons = () => {
             value={formData.startDate}
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -156,15 +167,15 @@ const Coupons = () => {
             value={formData.expireDate}
             onChange={handleChange}
             InputLabelProps={{ shrink: true }}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <Select
             fullWidth
             name="discountType"
             value={formData.discountType}
             onChange={handleChange}
-            margin="dense"
             displayEmpty
+            sx={{ mb: 2 }}
           >
             <MenuItem value="">--Select discount type--</MenuItem>
             <MenuItem value="amount">Amount ($)</MenuItem>
@@ -175,7 +186,7 @@ const Coupons = () => {
             name="minPurchase"
             value={formData.minPurchase}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -183,7 +194,7 @@ const Coupons = () => {
             name="discount"
             value={formData.discount}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
           <TextField
             fullWidth
@@ -191,7 +202,7 @@ const Coupons = () => {
             name="maxDiscount"
             value={formData.maxDiscount}
             onChange={handleChange}
-            margin="dense"
+            sx={{ mb: 2 }}
           />
         </DialogContent>
         <DialogActions>
@@ -203,64 +214,71 @@ const Coupons = () => {
       </Dialog>
 
       {/* Coupons Table */}
-      <Paper sx={{ mt: 2 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" p={2}>
-          {/* Left: Add Coupon Button */}
+      <Paper sx={{ mt: 2, width: "100%" }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          p={2}
+        >
           <Button variant="contained" onClick={handleOpen}>
             Add New Coupon
           </Button>
-
-          {/* Right: Search */}
           <TextField
             label="Ex: Coupon Title Or Code"
             variant="outlined"
             size="small"
+            fullWidth
+            sx={{ maxWidth: { sm: 300 } }}
           />
-        </Box>
+        </Stack>
 
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>S#</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Code</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Total Uses</TableCell>
-              <TableCell>Min Purchase</TableCell>
-              <TableCell>Max Discount</TableCell>
-              <TableCell>Discount</TableCell>
-              <TableCell>Discount Type</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>Expire Date</TableCell>
-              <TableCell>Status</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {coupons.map((coupon, index) => (
-              <TableRow key={coupon.id}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{coupon.title}</TableCell>
-                <TableCell>{coupon.code}</TableCell>
-                <TableCell>{coupon.couponType}</TableCell>
-                <TableCell>0</TableCell>
-                <TableCell>{coupon.minPurchase}</TableCell>
-                <TableCell>{coupon.maxDiscount}</TableCell>
-                <TableCell>{coupon.discount}</TableCell>
-                <TableCell>{coupon.discountType}</TableCell>
-                <TableCell>{coupon.startDate}</TableCell>
-                <TableCell>{coupon.expireDate}</TableCell>
-                <TableCell>Active</TableCell>
-              </TableRow>
-            ))}
-            {coupons.length === 0 && (
+        <TableContainer sx={{ width: "100%", overflowX: "auto" }}>
+          <Table stickyHeader>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={12} align="center">
-                  No coupons found
-                </TableCell>
+                <TableCell>S#</TableCell>
+                <TableCell>Title</TableCell>
+                <TableCell>Code</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Total Uses</TableCell>
+                <TableCell>Min Purchase</TableCell>
+                <TableCell>Max Discount</TableCell>
+                <TableCell>Discount</TableCell>
+                <TableCell>Discount Type</TableCell>
+                <TableCell>Start Date</TableCell>
+                <TableCell>Expire Date</TableCell>
+                <TableCell>Status</TableCell>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody>
+              {coupons.map((coupon, index) => (
+                <TableRow key={coupon.id}>
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{coupon.title}</TableCell>
+                  <TableCell>{coupon.code}</TableCell>
+                  <TableCell>{coupon.couponType}</TableCell>
+                  <TableCell>0</TableCell>
+                  <TableCell>{coupon.minPurchase}</TableCell>
+                  <TableCell>{coupon.maxDiscount}</TableCell>
+                  <TableCell>{coupon.discount}</TableCell>
+                  <TableCell>{coupon.discountType}</TableCell>
+                  <TableCell>{coupon.startDate}</TableCell>
+                  <TableCell>{coupon.expireDate}</TableCell>
+                  <TableCell>Active</TableCell>
+                </TableRow>
+              ))}
+              {coupons.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={12} align="center">
+                    No coupons found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
     </Box>
   );

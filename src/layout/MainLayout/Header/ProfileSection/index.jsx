@@ -13,13 +13,11 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
-  Popper,
   Stack,
   Switch,
   Typography,
-  Button,
-  Grid,
-  useTheme
+  useTheme,
+  Popper
 } from '@mui/material';
 
 // project imports
@@ -33,13 +31,10 @@ import User1 from 'assets/images/users/user-round.svg';
 // ✅ MUI Icons
 import {
   Logout as LogoutIcon,
-  Settings as SettingsIcon,
   Person as UserIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
-  Business as BuildingIcon,
-  Event as EventIcon,
-  MusicNote as MusicIcon
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 
 export default function ProfileSection() {
@@ -49,10 +44,6 @@ export default function ProfileSection() {
   // Profile menu states
   const anchorRef = useRef(null);
   const [open, setOpen] = useState(false);
-
-  // Demo Module menu states
-  const demoAnchorRef = useRef(null);
-  const [demoOpen, setDemoOpen] = useState(false);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -68,12 +59,6 @@ export default function ProfileSection() {
   const handleClose = (event) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) return;
     setOpen(false);
-  };
-
-  const handleDemoToggle = () => setDemoOpen((prev) => !prev);
-  const handleDemoClose = (event) => {
-    if (demoAnchorRef.current && demoAnchorRef.current.contains(event.target)) return;
-    setDemoOpen(false);
   };
 
   const handleModeToggle = () => {
@@ -114,84 +99,6 @@ export default function ProfileSection() {
 
   return (
     <Stack direction="row" alignItems="center" spacing={2}>
-      {/* Demo Module Button */}
-      <Button
-        variant="contained"
-        ref={demoAnchorRef}
-        onClick={handleDemoToggle}
-        sx={{
-          textTransform: 'none',
-          borderRadius: '20px',
-          background: theme.palette.primary.main,
-          color: theme.palette.common.white,
-          px: 2,
-          py: 1,
-          fontWeight: 500,
-            ml: 3,
-          '&:hover': { background: theme.palette.primary.dark }
-        }}
-      >
-        Demo Module
-      </Button>
-
-      {/* Demo Module Popper */}
-      <Popper
-        placement="bottom-end"
-        open={demoOpen}
-        anchorEl={demoAnchorRef.current}
-        role={undefined}
-        transition
-        disablePortal
-        modifiers={[{ name: 'offset', options: { offset: [0, 10] } }]}
-      >
-        {({ TransitionProps }) => (
-          <ClickAwayListener onClickAway={handleDemoClose}>
-            <Transitions in={demoOpen} {...TransitionProps}>
-              <Paper sx={{ p: 2, borderRadius: 2, minWidth: 280 }}>
-                <Typography variant="h6" gutterBottom>
-                  Modules Section
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ mb: 2, color: theme.palette.text.secondary }}
-                >
-                  Select Module & Monitor your business module wise
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<BuildingIcon />}
-                    >
-                      Rental
-                    </Button>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<EventIcon />}
-                    >
-                      Auditorium
-                    </Button>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<MusicIcon />}
-                    >
-                      Events
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Transitions>
-          </ClickAwayListener>
-        )}
-      </Popper>
-
       {/* Profile Chip */}
       <Chip
         sx={{

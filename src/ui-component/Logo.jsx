@@ -25,7 +25,7 @@
 // material-ui
 import { useTheme } from '@mui/material/styles';
 
-import logo from '../assets/images/blacklogo.png';
+import logo from '../assets/images/book.png';
 import logoDark from '../assets/images/whitelogo.png';
 
 // ==============================|| LOGO ||============================== //

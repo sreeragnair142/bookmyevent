@@ -11,15 +11,16 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 function AddProvider() {
   return (
-    <Box sx={{ p: 3, backgroundColor: 'white', width: '100%' }}>
+    <Box sx={{ p: { xs: 2, sm: 3 }, backgroundColor: 'white', width: '100%', overflowY: 'auto' }}>
       {/* Main Heading */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
         <Typography variant="h4" fontWeight="bold">Add New Store</Typography>
       </Box>
 
       <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
         Default English(EN)
       </Typography>
+
       <TextField
         fullWidth
         label="Name (Default)"
@@ -42,26 +43,26 @@ function AddProvider() {
         <Typography variant="h4" sx={{ mb: 2, fontWeight: "bold" }}>
           Store Logo & Covers
         </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+          <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center', flex: 1 }}>
             <Typography variant="caption">Logo (1:1)</Typography>
             <Button
               variant="outlined"
               component="label"
               startIcon={<CloudUploadIcon />}
-              sx={{ mt: 1 }}
+              sx={{ mt: 1, width: '100%' }}
             >
               Upload Image
               <input type="file" hidden />
             </Button>
           </Box>
-          <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center' }}>
+          <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center', flex: 1 }}>
             <Typography variant="caption">Store Cover (2:1)</Typography>
             <Button
               variant="outlined"
               component="label"
               startIcon={<CloudUploadIcon />}
-              sx={{ mt: 1 }}
+              sx={{ mt: 1, width: '100%' }}
             >
               Upload Image
               <input type="file" hidden />
@@ -77,7 +78,6 @@ function AddProvider() {
           fullWidth
           label="Estimated Delivery Time (Min & Maximum Time)"
           variant="outlined"
-          placeholder=""
           sx={{ mb: 2 }}
         />
         <Select
@@ -90,7 +90,6 @@ function AddProvider() {
           <MenuItem value="" disabled>
             Select zone
           </MenuItem>
-          {/* Add zone options as needed */}
         </Select>
         <TextField
           fullWidth
@@ -111,58 +110,20 @@ function AddProvider() {
       {/* Owner Information Section */}
       <Box sx={{ mt: 3 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Owner Information</Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            fullWidth
-            label="First name"
-            variant="outlined"
-            placeholder="First name"
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            fullWidth
-            label="Last name"
-            variant="outlined"
-            placeholder="Last name"
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            fullWidth
-            label="Phone"
-            variant="outlined"
-            placeholder="+1"
-            sx={{ flex: 1 }}
-          />
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+          <TextField fullWidth label="First name" variant="outlined" placeholder="First name" />
+          <TextField fullWidth label="Last name" variant="outlined" placeholder="Last name" />
+          <TextField fullWidth label="Phone" variant="outlined" placeholder="+1" />
         </Box>
       </Box>
 
       {/* Account Information Section */}
       <Box sx={{ mt: 3 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Account Information</Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            fullWidth
-            label="Email"
-            variant="outlined"
-            placeholder="Ex: ex@example.com"
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            fullWidth
-            label="Password"
-            variant="outlined"
-            placeholder="8+ characters required"
-            type="password"
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            fullWidth
-            label="Confirm password"
-            variant="outlined"
-            placeholder="8+ characters required"
-            type="password"
-            sx={{ flex: 1 }}
-          />
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+          <TextField fullWidth label="Email" variant="outlined" placeholder="Ex: ex@example.com" />
+          <TextField fullWidth label="Password" variant="outlined" type="password" placeholder="8+ characters required" />
+          <TextField fullWidth label="Confirm password" variant="outlined" type="password" placeholder="8+ characters required" />
         </Box>
       </Box>
 
@@ -183,7 +144,7 @@ function AddProvider() {
           placeholder="dd-mm-yyyy"
           sx={{ mb: 2 }}
         />
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
           <Typography variant="h4">TIN Certificate</Typography>
           <Typography variant="caption" color="textSecondary">
             Pdf, doc, jpg. File size : max 2 MB
@@ -194,13 +155,15 @@ function AddProvider() {
             variant="outlined"
             component="label"
             startIcon={<CloudUploadIcon />}
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, width: '100%' }}
           >
             Select a file or Drag & Drop here
             <input type="file" hidden />
           </Button>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, gap: 2, flexWrap: 'wrap' }}>
           <Button variant="outlined">Reset</Button>
           <Button variant="contained" color="primary">Submit</Button>
         </Box>
