@@ -1,15 +1,83 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
   TextField, 
   Button, 
   Select, 
-  MenuItem 
+  MenuItem, 
+  Snackbar,
+  Alert
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 function AddProvider() {
+  const [open, setOpen] = useState(false);
+  const [selectedZone, setSelectedZone] = useState('');
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [tinCertificatePreview, setTinCertificatePreview] = useState(null);
+
+  // Sample zones data - you can replace this with your actual zones
+  const zones = [
+    { id: 1, name: 'Downtown Zone' },
+    { id: 2, name: 'North Zone' },
+    { id: 3, name: 'South Zone' },
+    { id: 4, name: 'East Zone' },
+    { id: 5, name: 'West Zone' },
+    { id: 6, name: 'Airport Zone' },
+    { id: 7, name: 'Industrial Zone' }
+  ];
+
+  // Handle zone selection
+  const handleZoneChange = (event) => {
+    setSelectedZone(event.target.value);
+  };
+
+  // Handle image upload and preview
+  const handleImageUpload = (event, type) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        switch(type) {
+          case 'logo':
+            setLogoPreview(e.target.result);
+            break;
+          case 'cover':
+            setCoverPreview(e.target.result);
+            break;
+          case 'tin':
+            // For TIN certificate, show file name instead of preview for non-image files
+            if (file.type.startsWith('image/')) {
+              setTinCertificatePreview(e.target.result);
+            } else {
+              setTinCertificatePreview(file.name);
+            }
+            break;
+          default:
+            break;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle submit
+  const handleSubmit = () => {
+    // Here you can add API call or form logic
+    setOpen(true); // show notification
+  };
+
+  // Reset form
+  const handleReset = () => {
+    setSelectedZone('');
+    setLogoPreview(null);
+    setCoverPreview(null);
+    setTinCertificatePreview(null);
+    // You can add more reset logic for other form fields as needed
+  };
+
   return (
     <Box sx={{ p: { xs: 2, sm: 3 }, backgroundColor: 'white', width: '100%', overflowY: 'auto' }}>
       {/* Main Heading */}
@@ -44,28 +112,71 @@ function AddProvider() {
           Store Logo & Covers
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+          {/* Logo Upload */}
           <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center', flex: 1 }}>
             <Typography variant="caption">Logo (1:1)</Typography>
+            {logoPreview && (
+              <Box sx={{ mt: 1, mb: 2 }}>
+                <img 
+                  src={logoPreview} 
+                  alt="Logo Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '150px', 
+                    objectFit: 'contain',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }} 
+                />
+              </Box>
+            )}
             <Button
               variant="outlined"
               component="label"
               startIcon={<CloudUploadIcon />}
               sx={{ mt: 1, width: '100%' }}
             >
-              Upload Image
-              <input type="file" hidden />
+              {logoPreview ? 'Change Image' : 'Upload Image'}
+              <input 
+                type="file" 
+                hidden 
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'logo')}
+              />
             </Button>
           </Box>
+          
+          {/* Cover Upload */}
           <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center', flex: 1 }}>
             <Typography variant="caption">Store Cover (2:1)</Typography>
+            {coverPreview && (
+              <Box sx={{ mt: 1, mb: 2 }}>
+                <img 
+                  src={coverPreview} 
+                  alt="Cover Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '150px', 
+                    objectFit: 'contain',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }} 
+                />
+              </Box>
+            )}
             <Button
               variant="outlined"
               component="label"
               startIcon={<CloudUploadIcon />}
               sx={{ mt: 1, width: '100%' }}
             >
-              Upload Image
-              <input type="file" hidden />
+              {coverPreview ? 'Change Image' : 'Upload Image'}
+              <input 
+                type="file" 
+                hidden 
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'cover')}
+              />
             </Button>
           </Box>
         </Box>
@@ -84,12 +195,18 @@ function AddProvider() {
           fullWidth
           variant="outlined"
           displayEmpty
-          defaultValue=""
+          value={selectedZone}
+          onChange={handleZoneChange}
           sx={{ mb: 2 }}
         >
           <MenuItem value="" disabled>
             Select zone
           </MenuItem>
+          {zones.map((zone) => (
+            <MenuItem key={zone.id} value={zone.id}>
+              {zone.name}
+            </MenuItem>
+          ))}
         </Select>
         <TextField
           fullWidth
@@ -150,6 +267,31 @@ function AddProvider() {
             Pdf, doc, jpg. File size : max 2 MB
           </Typography>
         </Box>
+        
+        {/* TIN Certificate Preview */}
+        {tinCertificatePreview && (
+          <Box sx={{ mb: 2, p: 2, border: '1px solid #ddd', borderRadius: '4px' }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Selected File:</Typography>
+            {typeof tinCertificatePreview === 'string' && !tinCertificatePreview.startsWith('data:') ? (
+              // Non-image file - show file name
+              <Typography variant="body2" color="primary">{tinCertificatePreview}</Typography>
+            ) : (
+              // Image file - show preview
+              <img 
+                src={tinCertificatePreview} 
+                alt="TIN Certificate Preview" 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '200px', 
+                  objectFit: 'contain',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px'
+                }} 
+              />
+            )}
+          </Box>
+        )}
+        
         <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center', mb: 2 }}>
           <Button
             variant="outlined"
@@ -157,17 +299,36 @@ function AddProvider() {
             startIcon={<CloudUploadIcon />}
             sx={{ mt: 1, width: '100%' }}
           >
-            Select a file or Drag & Drop here
-            <input type="file" hidden />
+            {tinCertificatePreview ? 'Change File' : 'Select a file or Drag & Drop here'}
+            <input 
+              type="file" 
+              hidden 
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              onChange={(e) => handleImageUpload(e, 'tin')}
+            />
           </Button>
         </Box>
 
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' }, gap: 2, flexWrap: 'wrap' }}>
-          <Button variant="outlined">Reset</Button>
-          <Button variant="contained" color="primary">Submit</Button>
+          <Button variant="outlined" onClick={handleReset}>Reset</Button>
+          <Button variant="contained" color="primary" onClick={handleSubmit}>
+            Submit
+          </Button>
         </Box>
       </Box>
+
+      {/* Success Notification */}
+      <Snackbar 
+        open={open} 
+        autoHideDuration={3000} 
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setOpen(false)} severity="success" sx={{ width: '100%' }}>
+          Store Added Successfully!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

@@ -4,7 +4,7 @@ import {
   Switch, IconButton, Box, TextField, MenuItem, InputAdornment, Button, Menu,
   Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography
 } from '@mui/material';
-import { Visibility, Edit, Delete, Download } from '@mui/icons-material';
+import { VisibilityOutlined, Edit, Delete, Download } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const ProvidersList = () => {
@@ -148,9 +148,16 @@ const ProvidersList = () => {
                   />
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                  <IconButton color="primary"><Visibility /></IconButton>
-                  <IconButton color="primary" onClick={() => navigate(`/providers/edit`)}><Edit /></IconButton>
-                  <IconButton color="error" onClick={() => handleDeleteClick(provider)}><Delete /></IconButton>
+                  {/* Updated View Icon */}
+                  <IconButton color="primary" onClick={() => alert(`Viewing store: ${provider.storeInfo}`)}>
+                    <VisibilityOutlined />
+                  </IconButton>
+                  <IconButton color="primary" onClick={() => navigate(`/providers/edit`)}>
+                    <Edit />
+                  </IconButton>
+                  <IconButton color="error" onClick={() => handleDeleteClick(provider)}>
+                    <Delete />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}

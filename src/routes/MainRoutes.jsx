@@ -26,6 +26,7 @@ const EditList = Loadable(lazy(() => import('../views/Editlist')));
 const Category = Loadable(lazy(() => import('../views/Category')));
 const EditCategory = Loadable(lazy(() => import('../views/EditCategory')));
 
+
 const MainRoutes = {
   path: '/',
   element: <MainLayout />,
@@ -52,7 +53,9 @@ const MainRoutes = {
 
     // Vehicles - Category
     { path: 'vehicles/category', element: <Category /> },
-    { path: 'vehicles/category/edit/:id', element: <EditCategory /> } // <-- DYNAMIC ID
+    { path: 'vehicles/category/edit/:id', element: <EditCategory /> }, // <-- ✅ add comma here
+
+   
   ]
 };
 

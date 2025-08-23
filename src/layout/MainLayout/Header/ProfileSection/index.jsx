@@ -14,7 +14,6 @@ import {
   ListItemText,
   Paper,
   Stack,
-  Switch,
   Typography,
   useTheme,
   Popper
@@ -32,14 +31,12 @@ import User1 from 'assets/images/users/user-round.svg';
 import {
   Logout as LogoutIcon,
   Person as UserIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
 export default function ProfileSection() {
   const theme = useTheme();
-  const { borderRadius, mode, onChangeMode } = useConfig();
+  const { borderRadius, mode } = useConfig();
 
   // Profile menu states
   const anchorRef = useRef(null);
@@ -59,10 +56,6 @@ export default function ProfileSection() {
   const handleClose = (event) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) return;
     setOpen(false);
-  };
-
-  const handleModeToggle = () => {
-    onChangeMode(mode === 'light' ? 'dark' : 'light');
   };
 
   const prevOpen = useRef(open);
@@ -242,30 +235,6 @@ export default function ProfileSection() {
                         </ListItemIcon>
                         <ListItemText
                           primary={<Typography variant="body2">Profile</Typography>}
-                        />
-                      </ListItemButton>
-
-                      {/* Dark/Light Mode */}
-                      <ListItemButton sx={hoverStyle} onClick={handleModeToggle}>
-                        <ListItemIcon>
-                          {mode === 'light' ? (
-                            <DarkModeIcon fontSize="small" />
-                          ) : (
-                            <LightModeIcon fontSize="small" />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2">
-                              {mode === 'light' ? 'Dark Mode' : 'Light Mode'}
-                            </Typography>
-                          }
-                        />
-                        <Switch
-                          edge="end"
-                          checked={mode === 'dark'}
-                          onChange={handleModeToggle}
-                          color="primary"
                         />
                       </ListItemButton>
 

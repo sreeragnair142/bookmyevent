@@ -7,6 +7,7 @@ import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import Divider from '@mui/material/Divider';
 
 // project imports
 import LogoSection from '../LogoSection';
@@ -15,7 +16,7 @@ import NotificationSection from './NotificationSection';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 
 // icons
-import { IconMenu2, IconHome, IconBuildingSkyscraper, IconCalendarEvent } from '@tabler/icons-react';
+import { IconMenu2, IconHome, IconBuildingSkyscraper, IconCalendarEvent, IconPlus } from '@tabler/icons-react';
 
 export default function Header() {
   const theme = useTheme();
@@ -29,6 +30,18 @@ export default function Header() {
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
+
+  const handleAddModule = () => {
+    // Handle add module functionality here
+    console.log('Add new module clicked');
+    handleClose();
+  };
+
+  const handleModuleClick = (moduleLabel) => {
+    // Handle existing module click
+    console.log(`${moduleLabel} module clicked`);
+    handleClose();
+  };
 
   // Menu items
   const menuItems = [
@@ -85,35 +98,71 @@ export default function Header() {
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
           sx={{ p: 1 }}
         >
-          <Box sx={{ display: 'flex', gap: 2, px: 1, py: 1, backgroundColor: '#fff' }}>
-            {menuItems.map((item) => (
+          <Box sx={{ backgroundColor: '#fff' }}>
+            {/* Existing modules */}
+            <Box sx={{ display: 'flex', gap: 2, px: 1, py: 1 }}>
+              {menuItems.map((item) => (
+                <Button
+                  key={item.label}
+                  onClick={() => handleModuleClick(item.label)}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: '#fff',
+                    color: '#1976d2',
+                    borderRadius: '12px',
+                    px: 3,
+                    py: 2,
+                    minWidth: 100,
+                    fontSize: '0.95rem',
+                    border: '1px solid #e0e0e0',
+                    '&:hover': { bgcolor: '#f5f5f5' },
+                  }}
+                >
+                  <ListItemIcon sx={{ justifyContent: 'center', color: '#1976d2', minWidth: 0 }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {item.label}
+                  </Typography>
+                </Button>
+              ))}
+            </Box>
+
+            {/* Divider */}
+            <Divider sx={{ mx: 1, my: 1 }} />
+
+            {/* Add Module section */}
+            <Box sx={{ px: 1, py: 1 }}>
               <Button
-                key={item.label}
-                onClick={handleClose}
+                onClick={handleAddModule}
                 sx={{
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: 1,
+                  width: '100%',
                   bgcolor: '#fff',
-                  color: '#1976d2',
+                  color: '#4caf50',
                   borderRadius: '12px',
                   px: 3,
                   py: 2,
-                  minWidth: 100,
                   fontSize: '0.95rem',
-                  border: '1px solid #e0e0e0',
-                  '&:hover': { bgcolor: '#f5f5f5' },
+                  border: '1px dashed #4caf50',
+                  '&:hover': { 
+                    bgcolor: '#f1f8e9',
+                    borderColor: '#388e3c'
+                  },
                 }}
               >
-                <ListItemIcon sx={{ justifyContent: 'center', color: '#1976d2', minWidth: 0 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                  {item.label}
+                <IconPlus size={20} />
+                <Typography variant="body2">
+                  Add Module
                 </Typography>
               </Button>
-            ))}
+            </Box>
           </Box>
         </Menu>
 

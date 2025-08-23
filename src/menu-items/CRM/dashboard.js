@@ -41,6 +41,7 @@ const dashboard = {
       icon: icons.IconGraph,
       breadcrumbs: false
     },
+    
     {
       id: 'settings',
       title: 'Settings',

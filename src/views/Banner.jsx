@@ -20,7 +20,13 @@ import {
   Switch,
   IconButton,
   InputAdornment,
-  Divider
+  Divider,
+  Alert,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import {
@@ -29,7 +35,8 @@ import {
   Refresh,
   Search as SearchIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 
 // Styled components (unchanged)
@@ -73,6 +80,26 @@ const ImageUploadArea = styled(Box)(({ theme }) => ({
   '&:hover': {
     borderColor: '#14b8a6',
     backgroundColor: '#f0fdfa'
+  }
+}));
+
+const ImagePreviewContainer = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  maxWidth: 300,
+  marginTop: theme.spacing(2),
+  border: '1px solid #e0e0e0',
+  borderRadius: 8,
+  overflow: 'hidden'
+}));
+
+const PreviewCloseButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  color: 'white',
+  '&:hover': {
+    backgroundColor: 'rgba(0,0,0,0.7)'
   }
 }));
 
@@ -147,13 +174,32 @@ function TabPanel({ children, value, index, ...other }) {
 export default function Banner() {
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreviewEn, setImagePreviewEn] = useState(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
+  
+  // Notification states
+  const [notification, setNotification] = useState({
+    open: false,
+    message: '',
+    severity: 'success' // 'success', 'error', 'warning', 'info'
+  });
+
   const [formData, setFormData] = useState({
     title: '',
+    titleEn: '',
     zone: '',
+    zoneEn: '',
     bannerType: 'Store wise',
+    bannerTypeEn: 'Store wise',
     store: '',
+    storeEn: '',
     bannerImage: null,
-    additionalFile: null
+    bannerImageEn: null,
+    additionalFile: null,
+    additionalFileEn: null
   });
 
   const [banners, setBanners] = useState([
@@ -175,6 +221,21 @@ export default function Banner() {
     }
   ]);
 
+  const showNotification = (message, severity = 'success') => {
+    setNotification({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleCloseNotification = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setNotification({ ...notification, open: false });
+  };
+
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
@@ -186,22 +247,64 @@ export default function Banner() {
     });
   };
 
-  const handleImageUpload = (event) => {
+  const handleImageUpload = (event, isEnglish = false) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showNotification('Please select a valid image file', 'error');
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('Image size should be less than 5MB', 'error');
+        return;
+      }
+
+      const fieldName = isEnglish ? 'bannerImageEn' : 'bannerImage';
       setFormData({
         ...formData,
-        bannerImage: file
+        [fieldName]: file
       });
+
+      // Create image preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (isEnglish) {
+          setImagePreviewEn(e.target.result);
+        } else {
+          setImagePreview(e.target.result);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = (event, isEnglish = false) => {
     const file = event.target.files?.[0];
     if (file) {
+      const fieldName = isEnglish ? 'additionalFileEn' : 'additionalFile';
       setFormData({
         ...formData,
-        additionalFile: file
+        [fieldName]: file
+      });
+      showNotification('File uploaded successfully', 'info');
+    }
+  };
+
+  const removeImagePreview = (isEnglish = false) => {
+    if (isEnglish) {
+      setImagePreviewEn(null);
+      setFormData({
+        ...formData,
+        bannerImageEn: null
+      });
+    } else {
+      setImagePreview(null);
+      setFormData({
+        ...formData,
+        bannerImage: null
       });
     }
   };
@@ -209,22 +312,140 @@ export default function Banner() {
   const handleReset = () => {
     setFormData({
       title: '',
+      titleEn: '',
       zone: '',
+      zoneEn: '',
       bannerType: 'Store wise',
+      bannerTypeEn: 'Store wise',
       store: '',
+      storeEn: '',
       bannerImage: null,
-      additionalFile: null
+      bannerImageEn: null,
+      additionalFile: null,
+      additionalFileEn: null
     });
+    setImagePreview(null);
+    setImagePreviewEn(null);
+    setEditingId(null);
+    showNotification('Form reset successfully', 'info');
   };
 
   const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    // Handle form submission logic here
+    const currentTitle = tabValue === 0 ? formData.title : formData.titleEn;
+    const currentImage = tabValue === 0 ? formData.bannerImage : formData.bannerImageEn;
+    const currentBannerType = tabValue === 0 ? formData.bannerType : formData.bannerTypeEn;
+
+    if (!currentTitle || !currentImage) {
+      showNotification('Please fill in the title and select a banner image', 'error');
+      return;
+    }
+
+    // Create image URL for display
+    const imageUrl = currentImage ? URL.createObjectURL(currentImage) : '';
+
+    if (editingId) {
+      // Update existing banner
+      setBanners(prevBanners => 
+        prevBanners.map(banner => 
+          banner.id === editingId 
+            ? {
+                ...banner,
+                title: currentTitle,
+                type: currentBannerType,
+                image: imageUrl || banner.image
+              }
+            : banner
+        )
+      );
+      setEditingId(null);
+      showNotification('Banner updated successfully!', 'success');
+    } else {
+      // Add new banner
+      const newBanner = {
+        id: Math.max(...banners.map(b => b.id), 0) + 1,
+        image: imageUrl,
+        title: currentTitle,
+        type: currentBannerType,
+        featured: false,
+        status: true
+      };
+      setBanners(prevBanners => [...prevBanners, newBanner]);
+      showNotification('Banner created successfully!', 'success');
+    }
+
+    // Reset form after submission
+    setFormData({
+      title: '',
+      titleEn: '',
+      zone: '',
+      zoneEn: '',
+      bannerType: 'Store wise',
+      bannerTypeEn: 'Store wise',
+      store: '',
+      storeEn: '',
+      bannerImage: null,
+      bannerImageEn: null,
+      additionalFile: null,
+      additionalFileEn: null
+    });
+    setImagePreview(null);
+    setImagePreviewEn(null);
   };
 
   const handleToggle = (id, field) => (event) => {
-    setBanners((prevBanners) => prevBanners.map((banner) => (banner.id === id ? { ...banner, [field]: event.target.checked } : banner)));
+    setBanners((prevBanners) => 
+      prevBanners.map((banner) => 
+        banner.id === id 
+          ? { ...banner, [field]: event.target.checked } 
+          : banner
+      )
+    );
+    
+    const banner = banners.find(b => b.id === id);
+    const fieldName = field === 'featured' ? 'Featured' : 'Status';
+    const action = event.target.checked ? 'enabled' : 'disabled';
+    showNotification(`${fieldName} ${action} for "${banner?.title}"`, 'info');
   };
+
+  const handleEdit = (banner) => {
+    setFormData({
+      title: banner.title,
+      titleEn: banner.title,
+      zone: '',
+      zoneEn: '',
+      bannerType: banner.type,
+      bannerTypeEn: banner.type,
+      store: '',
+      storeEn: '',
+      bannerImage: null,
+      bannerImageEn: null,
+      additionalFile: null,
+      additionalFileEn: null
+    });
+    setEditingId(banner.id);
+    setImagePreview(banner.image);
+    setImagePreviewEn(banner.image);
+    setTabValue(0); // Switch to Default tab for editing
+    showNotification(`Editing "${banner.title}"`, 'info');
+  };
+
+  const handleDelete = (id) => {
+    const banner = banners.find(b => b.id === id);
+    if (window.confirm(`Are you sure you want to delete "${banner?.title}"?`)) {
+      setBanners(prevBanners => prevBanners.filter(banner => banner.id !== id));
+      showNotification(`Banner "${banner?.title}" deleted successfully`, 'success');
+    }
+  };
+
+  const handleImagePreview = (imageUrl, title) => {
+    setSelectedPreviewImage({ url: imageUrl, title });
+    setPreviewDialogOpen(true);
+  };
+
+  // Filter banners based on search query
+  const filteredBanners = banners.filter(banner =>
+    banner.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
@@ -257,15 +478,38 @@ export default function Banner() {
               <Typography variant="body2" sx={{ mb: 1, color: '#ef4444', fontWeight: 500 }}>
                 Banner image * (Ratio 3:1)
               </Typography>
-              <input accept="image/*" style={{ display: 'none' }} id="banner-upload" type="file" onChange={handleImageUpload} />
+              <input accept="image/*" style={{ display: 'none' }} id="banner-upload" type="file" onChange={(e) => handleImageUpload(e, false)} />
               <label htmlFor="banner-upload">
                 <ImageUploadArea role="button" tabIndex={0}>
                   <ImageIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
                   <Typography variant="body2" color="text.secondary">
-                    {formData.bannerImage ? formData.bannerImage.name : 'New banner'}
+                    {formData.bannerImage ? formData.bannerImage.name : 'Click to upload banner image'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Supported formats: JPG, PNG, GIF (Max 5MB)
                   </Typography>
                 </ImageUploadArea>
               </label>
+
+              {/* Image Preview */}
+              {imagePreview && (
+                <ImagePreviewContainer>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleImagePreview(imagePreview, 'Banner Preview')}
+                  />
+                  <PreviewCloseButton size="small" onClick={() => removeImagePreview(false)}>
+                    <CloseIcon fontSize="small" />
+                  </PreviewCloseButton>
+                </ImagePreviewContainer>
+              )}
             </Grid>
 
             {/* Zone Field */}
@@ -303,6 +547,7 @@ export default function Banner() {
                   <MenuItem value="Store wise">Store wise</MenuItem>
                   <MenuItem value="Zone wise">Zone wise</MenuItem>
                   <MenuItem value="Global">Global</MenuItem>
+                  <MenuItem value="Default">Default</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -331,7 +576,7 @@ export default function Banner() {
             {/* File Upload Button */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <input accept="*/*" style={{ display: 'none' }} id="file-upload" type="file" onChange={handleFileUpload} />
+                <input accept="*/*" style={{ display: 'none' }} id="file-upload" type="file" onChange={(e) => handleFileUpload(e, false)} />
                 <label htmlFor="file-upload">
                   <Button
                     variant="outlined"
@@ -364,7 +609,7 @@ export default function Banner() {
                   Reset
                 </ResetButton>
                 <SubmitButton variant="contained" onClick={handleSubmit}>
-                  Submit
+                  {editingId ? 'Update' : 'Submit'}
                 </SubmitButton>
               </Box>
             </Grid>
@@ -373,12 +618,14 @@ export default function Banner() {
 
         <TabPanel value={tabValue} index={1}>
           <Grid container rowSpacing={3} columnSpacing={3}>
-            {/* English Version Fields */}
-            <Grid item xs={12} md={6}>
+            {/* English Title Field */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <TextField
                 fullWidth
                 label="Title (English)"
                 variant="outlined"
+                value={formData.titleEn}
+                onChange={handleInputChange('titleEn')}
                 placeholder="New banner"
                 slotProps={{
                   input: { sx: { borderRadius: 1 } }
@@ -386,61 +633,110 @@ export default function Banner() {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            {/* English Banner Image Upload */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Typography variant="body2" sx={{ mb: 1, color: '#ef4444', fontWeight: 500 }}>
                 Banner image * (Ratio 3:1)
               </Typography>
-              <input accept="image/*" style={{ display: 'none' }} id="banner-upload-en" type="file" onChange={handleImageUpload} />
+              <input accept="image/*" style={{ display: 'none' }} id="banner-upload-en" type="file" onChange={(e) => handleImageUpload(e, true)} />
               <label htmlFor="banner-upload-en">
                 <ImageUploadArea role="button" tabIndex={0}>
                   <ImageIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
                   <Typography variant="body2" color="text.secondary">
-                    New banner
+                    {formData.bannerImageEn ? formData.bannerImageEn.name : 'Click to upload banner image'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Supported formats: JPG, PNG, GIF (Max 5MB)
                   </Typography>
                 </ImageUploadArea>
               </label>
+
+              {/* English Image Preview */}
+              {imagePreviewEn && (
+                <ImagePreviewContainer>
+                  <img
+                    src={imagePreviewEn}
+                    alt="Preview"
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => handleImagePreview(imagePreviewEn, 'Banner Preview (English)')}
+                  />
+                  <PreviewCloseButton size="small" onClick={() => removeImagePreview(true)}>
+                    <CloseIcon fontSize="small" />
+                  </PreviewCloseButton>
+                </ImagePreviewContainer>
+              )}
             </Grid>
 
-            <Grid item xs={12}>
+            {/* English Zone Field */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <FormControl fullWidth variant="outlined">
                 <InputLabel id="zone-label-en">Zone</InputLabel>
-                <Select labelId="zone-label-en" label="Zone" sx={{ borderRadius: 1 }}>
+                <Select
+                  labelId="zone-label-en"
+                  value={formData.zoneEn}
+                  onChange={handleInputChange('zoneEn')}
+                  label="Zone"
+                  sx={{ borderRadius: 1 }}
+                >
                   <MenuItem value="">
                     <em>---Select---</em>
                   </MenuItem>
                   <MenuItem value="zone1">Zone 1</MenuItem>
                   <MenuItem value="zone2">Zone 2</MenuItem>
+                  <MenuItem value="zone3">Zone 3</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            {/* English Banner Type Field */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <FormControl fullWidth variant="outlined">
                 <InputLabel id="banner-type-label-en">Banner type</InputLabel>
-                <Select labelId="banner-type-label-en" defaultValue="Store wise" label="Banner type" sx={{ borderRadius: 1 }}>
+                <Select
+                  labelId="banner-type-label-en"
+                  value={formData.bannerTypeEn}
+                  onChange={handleInputChange('bannerTypeEn')}
+                  label="Banner type"
+                  sx={{ borderRadius: 1 }}
+                >
                   <MenuItem value="Store wise">Store wise</MenuItem>
                   <MenuItem value="Zone wise">Zone wise</MenuItem>
                   <MenuItem value="Global">Global</MenuItem>
+                  <MenuItem value="Default">Default</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            {/* English Store Field */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <FormControl fullWidth variant="outlined">
                 <InputLabel id="store-label-en">Store</InputLabel>
-                <Select labelId="store-label-en" label="Store" sx={{ borderRadius: 1 }}>
+                <Select
+                  labelId="store-label-en"
+                  value={formData.storeEn}
+                  onChange={handleInputChange('storeEn')}
+                  label="Store"
+                  sx={{ borderRadius: 1 }}
+                >
                   <MenuItem value="">
                     <em>---Select store---</em>
                   </MenuItem>
                   <MenuItem value="store1">Store 1</MenuItem>
                   <MenuItem value="store2">Store 2</MenuItem>
+                  <MenuItem value="store3">Store 3</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            {/* English File Upload Button */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <input accept="*/*" style={{ display: 'none' }} id="file-upload-en" type="file" onChange={handleFileUpload} />
+                <input accept="*/*" style={{ display: 'none' }} id="file-upload-en" type="file" onChange={(e) => handleFileUpload(e, true)} />
                 <label htmlFor="file-upload-en">
                   <Button
                     variant="outlined"
@@ -448,12 +744,12 @@ export default function Banner() {
                     startIcon={<CloudUpload />}
                     sx={{
                       textTransform: 'none',
-                      borderColor: '#e0e0e0',
-                      color: '#666',
+                      borderColor: 'divider',
+                      color: 'text.secondary',
                       borderRadius: 1,
                       '&:hover': {
-                        borderColor: '#14b8a6',
-                        backgroundColor: '#f0fdfa'
+                        borderColor: 'primary.main',
+                        backgroundColor: 'primary.light'
                       }
                     }}
                   >
@@ -461,17 +757,20 @@ export default function Banner() {
                   </Button>
                 </label>
                 <Typography variant="body2" color="text.secondary">
-                  No file chosen
+                  {formData.additionalFileEn ? formData.additionalFileEn.name : 'No file chosen'}
                 </Typography>
               </Box>
             </Grid>
 
-            <Grid item xs={12}>
+            {/* English Action Buttons */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <ResetButton variant="outlined" startIcon={<Refresh />} onClick={handleReset}>
+                <ResetButton variant="outlined" onClick={handleReset} startIcon={<Refresh />}>
                   Reset
                 </ResetButton>
-                <SubmitButton variant="contained">Submit</SubmitButton>
+                <SubmitButton variant="contained" onClick={handleSubmit}>
+                  {editingId ? 'Update' : 'Submit'}
+                </SubmitButton>
               </Box>
             </Grid>
           </Grid>
@@ -500,7 +799,7 @@ export default function Banner() {
                   fontWeight: 600
                 }}
               >
-                {banners.length}
+                {filteredBanners.length}
               </Box>
             </Box>
 
@@ -536,9 +835,9 @@ export default function Banner() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {banners.map((banner) => (
+              {filteredBanners.map((banner, index) => (
                 <StyledTableRow key={banner.id}>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>{banner.id}</TableCell>
+                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>{index + 1}</TableCell>
                   <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <img
@@ -548,7 +847,12 @@ export default function Banner() {
                           width: 100,
                           height: 33,
                           objectFit: 'cover',
-                          borderRadius: 4
+                          borderRadius: 4,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleImagePreview(banner.image, banner.title)}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/100x33?text=No+Image';
                         }}
                       />
                       <Typography>{banner.title}</Typography>
@@ -562,10 +866,10 @@ export default function Banner() {
                     <Switch checked={banner.status} onChange={handleToggle(banner.id, 'status')} color="success" />
                   </TableCell>
                   <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
-                    <IconButton color="primary" size="small">
+                    <IconButton color="primary" size="small" onClick={() => handleEdit(banner)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton color="error" size="small">
+                    <IconButton color="error" size="small" onClick={() => handleDelete(banner.id)}>
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -573,8 +877,66 @@ export default function Banner() {
               ))}
             </TableBody>
           </Table>
+
+          {filteredBanners.length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography color="text.secondary">
+                {searchQuery ? 'No banners found matching your search.' : 'No banners available.'}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </StyledPaper>
+
+      {/* Notification Snackbar */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={4000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Image Preview Dialog */}
+      <Dialog
+        open={previewDialogOpen}
+        onClose={() => setPreviewDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {selectedPreviewImage?.title || 'Image Preview'}
+          <IconButton onClick={() => setPreviewDialogOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedPreviewImage && (
+            <img
+              src={selectedPreviewImage.url}
+              alt={selectedPreviewImage.title}
+              style={{
+                width: '100%',
+                height: 'auto',
+                borderRadius: 8
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreviewDialogOpen(false)} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
