@@ -25,7 +25,12 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import {
   CloudUpload as CloudUploadIcon,
@@ -33,7 +38,10 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   FileDownload as ExportIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  TableView as ExcelIcon,
+  Description as CsvIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -84,6 +92,10 @@ export default function CategoryManagement() {
     categoryId: null,
     categoryName: ''
   });
+
+  // Export menu state
+  const [exportMenuAnchor, setExportMenuAnchor] = useState(null);
+  const exportMenuOpen = Boolean(exportMenuAnchor);
 
   const navigate = useNavigate();
 
@@ -229,6 +241,89 @@ export default function CategoryManagement() {
     const currentLang = getCurrentLanguageKey();
     return category.names[currentLang].toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  // Export menu handlers
+  const handleExportMenuOpen = (event) => {
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+  };
+
+  // CSV Export function
+  const exportToCSV = () => {
+    const currentLang = getCurrentLanguageKey();
+    const currentLangLabel = languageTabs[tabValue].label;
+    
+    // Prepare CSV headers
+    const headers = ['SI', 'ID', `Name (${currentLangLabel})`, 'Status'];
+    
+    // Prepare CSV data
+    const csvData = filteredCategories.map((category, index) => [
+      index + 1,
+      category.id,
+      category.names[currentLang],
+      category.status ? 'Active' : 'Inactive'
+    ]);
+
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    csvData.forEach(row => {
+      csvContent += row.map(field => `"${field}"`).join(',') + '\n';
+    });
+
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `categories_${currentLang}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    handleExportMenuClose();
+    showNotification('CSV file downloaded successfully!', 'success');
+  };
+
+  // Excel Export function (simplified - creates tab-separated values)
+  const exportToExcel = () => {
+    const currentLang = getCurrentLanguageKey();
+    const currentLangLabel = languageTabs[tabValue].label;
+    
+    // Prepare Excel headers
+    const headers = ['SI', 'ID', `Name (${currentLangLabel})`, 'Status'];
+    
+    // Prepare Excel data
+    const excelData = filteredCategories.map((category, index) => [
+      index + 1,
+      category.id,
+      category.names[currentLang],
+      category.status ? 'Active' : 'Inactive'
+    ]);
+
+    // Create Excel content (tab-separated values)
+    let excelContent = headers.join('\t') + '\n';
+    excelData.forEach(row => {
+      excelContent += row.join('\t') + '\n';
+    });
+
+    // Create and download file
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `categories_${currentLang}_${new Date().toISOString().split('T')[0]}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    handleExportMenuClose();
+    showNotification('Excel file downloaded successfully!', 'success');
+  };
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', backgroundColor: '#f5f5f5', p: { xs: 2, sm: 3 } }}>
@@ -442,6 +537,8 @@ export default function CategoryManagement() {
                 <Button
                   variant="outlined"
                   startIcon={<ExportIcon />}
+                  endIcon={<ExpandMoreIcon />}
+                  onClick={handleExportMenuOpen}
                   sx={{
                     textTransform: 'none',
                     borderColor: '#e0e0e0',
@@ -451,6 +548,49 @@ export default function CategoryManagement() {
                 >
                   Export
                 </Button>
+                
+                {/* Export Menu */}
+                <Menu
+                  anchorEl={exportMenuAnchor}
+                  open={exportMenuOpen}
+                  onClose={handleExportMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  sx={{
+                    '& .MuiPaper-root': {
+                      minWidth: 180,
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                      borderRadius: 2,
+                      mt: 1
+                    }
+                  }}
+                >
+                  <MenuItem onClick={exportToExcel} sx={{ py: 1.5, px: 2 }}>
+                    <ListItemIcon>
+                      <ExcelIcon sx={{ color: '#1976d2' }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Export to Excel"
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={exportToCSV} sx={{ py: 1.5, px: 2 }}>
+                    <ListItemIcon>
+                      <CsvIcon sx={{ color: '#2e7d32' }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Export to CSV"
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </MenuItem>
+                </Menu>
               </Box>
             </Box>
 
