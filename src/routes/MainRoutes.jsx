@@ -26,6 +26,25 @@ const EditList = Loadable(lazy(() => import('../views/Editlist')));
 const Category = Loadable(lazy(() => import('../views/Category')));
 const EditCategory = Loadable(lazy(() => import('../views/EditCategory')));
 
+// Auditorium Components (using your audiviews folder)
+const AuditoriumDashboard = Loadable(lazy(() => import('../audiviews/dashboard/index')));
+const Auditoriumcoupons = Loadable(lazy(() => import('../audiviews/coupons')));
+const Auditoriumbanner = Loadable(lazy(() => import('../audiviews/Banner')));
+const AuditoriumPushnotifications = Loadable(lazy(() => import('../audiviews/Pushnotifications')));
+const Auditoriumcategory = Loadable(lazy(() => import('../audiviews/category')));
+const Auditoriumnewprovidersrequest = Loadable(lazy(() => import('../audiviews/Newprovider')));
+const Auditoriumaddprovider = Loadable(lazy(() => import('../audiviews/Addprovider')));
+const Auditoriumproviderlist = Loadable(lazy(() => import('../audiviews/Providerslist')));
+
+
+
+
+
+
+
+// For now, we'll use the default dashboard for rental and events until you create specific ones
+// const RentalDashboard = Loadable(lazy(() => import('../views/rental/Dashboard')));
+// const EventsDashboard = Loadable(lazy(() => import('../views/events/Dashboard')));
 
 const MainRoutes = {
   path: '/',
@@ -53,9 +72,29 @@ const MainRoutes = {
 
     // Vehicles - Category
     { path: 'vehicles/category', element: <Category /> },
-    { path: 'vehicles/category/edit/:id', element: <EditCategory /> }, // <-- ✅ add comma here
+    { path: 'vehicles/category/edit/:id', element: <EditCategory /> }, 
 
-   
+    // Auditorium Routes
+        { path: 'auditorium/dashboard', element: <AuditoriumDashboard /> },
+
+    { path: 'auditorium/banner', element: <Auditoriumbanner /> },
+    { path: 'auditorium/coupons', element: <Auditoriumcoupons /> },
+    { path: 'auditorium/pushnotifications', element: <AuditoriumPushnotifications /> },
+    { path: 'auditorium/category', element: <Auditoriumcategory /> },
+    { path: 'auditorium/provider', element: <Auditoriumnewprovidersrequest /> },
+    { path: 'auditorium/addprovider', element: <Auditoriumaddprovider /> },
+        { path: 'auditorium/providerslist', element: <Auditoriumaddprovider /> },
+
+
+
+
+
+
+ 
+
+    { path: 'rental/dashboard', element: <DashboardDefault /> },
+
+    { path: 'events/dashboard', element: <DashboardDefault /> },
   ]
 };
 

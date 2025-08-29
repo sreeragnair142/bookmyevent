@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -20,6 +21,7 @@ import { IconMenu2, IconHome, IconBuildingSkyscraper, IconCalendarEvent, IconPlu
 
 export default function Header() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
 
   const { menuMaster } = useGetMenuMaster();
@@ -32,22 +34,87 @@ export default function Header() {
   const handleClose = () => setAnchorEl(null);
 
   const handleAddModule = () => {
-    // Handle add module functionality here
     console.log('Add new module clicked');
     handleClose();
   };
 
   const handleModuleClick = (moduleLabel) => {
-    // Handle existing module click
     console.log(`${moduleLabel} module clicked`);
+
+    // Set the active module in localStorage to persist across page reloads
+    const moduleName = moduleLabel.toLowerCase();
+    localStorage.setItem('activeModule', moduleName);
+    
+    // Determine sidebar type based on module
+    let sidebarType = 'crm'; // default
+    if (moduleName === 'auditorium') {
+      sidebarType = 'auditorium';
+    }
+    
+    localStorage.setItem('sidebarType', sidebarType);
+    
+    // Dispatch events to update sidebar and menu with the new module
+    window.dispatchEvent(new CustomEvent('moduleChanged', { 
+      detail: { module: moduleName, sidebarType } 
+    }));
+    
+    window.dispatchEvent(new CustomEvent('sidebarTypeChanged', { 
+      detail: { sidebarType } 
+    }));
+
+    // Force menu to refresh with new items
+    window.dispatchEvent(new CustomEvent('menuItemsChanged', {
+      detail: { moduleType: moduleName }
+    }));
+
+    // Handle different module navigation
+    switch (moduleName) {
+      case 'rental':
+        navigate('/rental/dashboard');
+        break;
+      case 'events':
+        navigate('/events/dashboard');
+        break;
+      case 'auditorium':
+        navigate('/auditorium/dashboard');
+        break;
+      default:
+        console.log(`No route defined for ${moduleLabel}`);
+    }
+
+    // Force sidebar to refresh/update with new menu items
+    window.dispatchEvent(new CustomEvent('refreshSidebar', {
+      detail: { moduleType: moduleName }
+    }));
+
+    // Force page reload to ensure menu items are updated
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+
     handleClose();
   };
 
   // Menu items
   const menuItems = [
-    { label: 'Rental', icon: <IconBuildingSkyscraper size={24} color="#1976d2" /> },
-    { label: 'Events', icon: <IconCalendarEvent size={24} color="#1976d2" /> },
-    { label: 'Hotel', icon: <IconHome size={24} color="#1976d2" /> },
+    { 
+      label: 'Rental', 
+      icon: <IconBuildingSkyscraper size={24} color="#1976d2" />,
+      route: '/rental/dashboard',
+      sidebarType: 'crm'
+    },
+    { 
+      label: 'Events', 
+      icon: <IconCalendarEvent size={24} color="#1976d2" />,
+      route: '/events/dashboard',
+      sidebarType: 'crm'
+    },
+    { 
+      label: 'Auditorium',
+      icon: <IconHome size={24} color="#1976d2" />, 
+      route: '/auditorium/dashboard',
+      sidebarType: 'auditorium'
+    },
   ];
 
   return (
@@ -119,6 +186,8 @@ export default function Header() {
                     fontSize: '0.95rem',
                     border: '1px solid #e0e0e0',
                     '&:hover': { bgcolor: '#f5f5f5' },
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
                   }}
                 >
                   <ListItemIcon sx={{ justifyContent: 'center', color: '#1976d2', minWidth: 0 }}>
