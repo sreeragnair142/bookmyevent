@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // material-ui
 import {
@@ -34,9 +35,13 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 
+// ✅ API base URL (for Vite projects)
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function ProfileSection() {
   const theme = useTheme();
   const { borderRadius, mode } = useConfig();
+  const navigate = useNavigate();
 
   // Profile menu states
   const anchorRef = useRef(null);
@@ -56,6 +61,57 @@ export default function ProfileSection() {
   const handleClose = (event) => {
     if (anchorRef.current && anchorRef.current.contains(event.target)) return;
     setOpen(false);
+  };
+
+  // Logout handler with API call
+  const handleLogout = async () => {
+    try {
+      // Get the token from localStorage or sessionStorage
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      // Make API call to logout endpoint
+      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Include token for authentication
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Logout failed');
+      }
+
+      // Clear token and user data from storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+
+      // Close the menu
+      setOpen(false);
+
+      // Navigate to login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Optionally show an error message to the user (e.g., using a Snackbar or Alert)
+      // For now, proceed with client-side cleanup and redirect
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      setOpen(false);
+      navigate('/login');
+    }
+  };
+
+  // Profile handler
+  const handleProfile = () => {
+    setOpen(false);
+    navigate('/profile');
   };
 
   const prevOpen = useRef(open);
@@ -229,7 +285,7 @@ export default function ProfileSection() {
                       }}
                     >
                       {/* Profile */}
-                      <ListItemButton sx={hoverStyle}>
+                      <ListItemButton sx={hoverStyle} onClick={handleProfile}>
                         <ListItemIcon>
                           <UserIcon fontSize="small" />
                         </ListItemIcon>
@@ -239,7 +295,7 @@ export default function ProfileSection() {
                       </ListItemButton>
 
                       {/* Logout */}
-                      <ListItemButton sx={hoverStyle}>
+                      <ListItemButton sx={hoverStyle} onClick={handleLogout}>
                         <ListItemIcon>
                           <LogoutIcon fontSize="small" />
                         </ListItemIcon>

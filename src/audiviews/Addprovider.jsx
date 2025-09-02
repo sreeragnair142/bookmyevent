@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -17,17 +17,35 @@ function AddProvider() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [tinCertificatePreview, setTinCertificatePreview] = useState(null);
+  const [zones, setZones] = useState([]);
+  const [error, setError] = useState(null);
 
-  // Sample zones data - you can replace this with your actual zones
-  const zones = [
-    { id: 1, name: 'Downtown Zone' },
-    { id: 2, name: 'North Zone' },
-    { id: 3, name: 'South Zone' },
-    { id: 4, name: 'East Zone' },
-    { id: 5, name: 'West Zone' },
-    { id: 6, name: 'Airport Zone' },
-    { id: 7, name: 'Industrial Zone' }
-  ];
+  // Fetch zones from API on component mount
+  useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const response = await fetch('/api/zones?isActive=true', {
+          headers: {
+            'Content-Type': 'application/json',
+            // Add authorization header if needed
+            // 'Authorization': `Bearer ${yourAuthToken}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch zones');
+        }
+        
+        const data = await response.json();
+        setZones(data.data.zones || []); // Assuming API returns zones in data.zones
+      } catch (err) {
+        console.error('Error fetching zones:', err);
+        setError('Failed to load zones. Please try again.');
+      }
+    };
+
+    fetchZones();
+  }, []);
 
   // Handle zone selection
   const handleZoneChange = (event) => {
@@ -48,7 +66,6 @@ function AddProvider() {
             setCoverPreview(e.target.result);
             break;
           case 'tin':
-            // For TIN certificate, show file name instead of preview for non-image files
             if (file.type.startsWith('image/')) {
               setTinCertificatePreview(e.target.result);
             } else {
@@ -64,9 +81,15 @@ function AddProvider() {
   };
 
   // Handle submit
-  const handleSubmit = () => {
-    // Here you can add API call or form logic
-    setOpen(true); // show notification
+  const handleSubmit = async () => {
+    try {
+      // Add your API call logic here
+      // Example: await fetch('/api/providers', { method: 'POST', body: formData });
+      setOpen(true); // show notification
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setError('Failed to submit form. Please try again.');
+    }
   };
 
   // Reset form
@@ -75,7 +98,7 @@ function AddProvider() {
     setLogoPreview(null);
     setCoverPreview(null);
     setTinCertificatePreview(null);
-    // You can add more reset logic for other form fields as needed
+    setError(null);
   };
 
   return (
@@ -203,7 +226,7 @@ function AddProvider() {
             Select zone
           </MenuItem>
           {zones.map((zone) => (
-            <MenuItem key={zone.id} value={zone.id}>
+            <MenuItem key={zone._id} value={zone._id}>
               {zone.name}
             </MenuItem>
           ))}
@@ -273,10 +296,8 @@ function AddProvider() {
           <Box sx={{ mb: 2, p: 2, border: '1px solid #ddd', borderRadius: '4px' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>Selected File:</Typography>
             {typeof tinCertificatePreview === 'string' && !tinCertificatePreview.startsWith('data:') ? (
-              // Non-image file - show file name
               <Typography variant="body2" color="primary">{tinCertificatePreview}</Typography>
             ) : (
-              // Image file - show preview
               <img 
                 src={tinCertificatePreview} 
                 alt="TIN Certificate Preview" 
@@ -329,6 +350,20 @@ function AddProvider() {
           Store Added Successfully!
         </Alert>
       </Snackbar>
+
+      {/* Error Notification */}
+      {error && (
+        <Snackbar 
+          open={!!error} 
+          autoHideDuration={3000} 
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        </Snackbar>
+      )}
     </Box>
   );
 }
