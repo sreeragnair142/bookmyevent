@@ -28,16 +28,16 @@ import {
 import { VisibilityOutlined, Edit, Delete, Download } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const ProvidersList = () => {
+const AuditoriumsList = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [providers, setProviders] = useState([]);
+  const [auditoriums, setAuditoriums] = useState([]);
   const [selectedZone, setSelectedZone] = useState('All Zones');
   const [searchTerm, setSearchTerm] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [providerToDelete, setProviderToDelete] = useState(null);
+  const [auditoriumToDelete, setAuditoriumToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [toggleLoading, setToggleLoading] = useState({}); // Track loading for individual toggles
+  const [toggleLoading, setToggleLoading] = useState({});
   const [notification, setNotification] = useState({
     open: false,
     message: '',
@@ -64,8 +64,8 @@ const ProvidersList = () => {
         'Content-Type': 'application/json',
         Accept: 'application/json'
       },
-      credentials: 'include', // Important for CORS
-      mode: 'cors' // Explicitly set CORS mode
+      credentials: 'include',
+      mode: 'cors'
     };
 
     if (token) {
@@ -83,7 +83,7 @@ const ProvidersList = () => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(url, {
           ...options,
@@ -135,25 +135,25 @@ const ProvidersList = () => {
   };
 
   useEffect(() => {
-    fetchProviders();
-    if (location.state?.updatedProvider) {
-      const updatedProvider = location.state.updatedProvider;
-      setProviders((prev) =>
-        prev.map((provider) =>
-          provider.id === updatedProvider.id
+    fetchAuditoriums();
+    if (location.state?.updatedAuditorium) {
+      const updatedAuditorium = location.state.updatedAuditorium;
+      setAuditoriums((prev) =>
+        prev.map((auditorium) =>
+          auditorium._id === updatedAuditorium._id
             ? {
-                ...provider,
-                ...updatedProvider,
-                storeInfo: updatedProvider.storeName,
-                ownerInfo: `${updatedProvider.ownerFirstName || ''} ${updatedProvider.ownerLastName || ''} (${updatedProvider.ownerPhone || 'N/A'})`,
-                zone: zones.find((zone) => zone._id === updatedProvider.zone)?.name || 'N/A'
+                ...auditorium,
+                ...updatedAuditorium,
+                storeInfo: updatedAuditorium.storeName,
+                ownerInfo: `${updatedAuditorium.ownerFirstName || ''} ${updatedAuditorium.ownerLastName || ''} (${updatedAuditorium.ownerPhone || 'N/A'})`,
+                zone: zones.find((zone) => zone._id === updatedAuditorium.zone)?.name || 'N/A'
               }
-            : provider
+            : auditorium
         )
       );
       setNotification({
         open: true,
-        message: 'Provider updated successfully!',
+        message: 'Auditorium updated successfully!',
         severity: 'success'
       });
     }
@@ -188,49 +188,53 @@ const ProvidersList = () => {
     fetchZones();
   }, []);
 
-  const fetchProviders = async () => {
+  const fetchAuditoriums = async () => {
     try {
       setLoading(true);
-      const url = `${API_BASE_URL}/providers`;
+      const url = `${API_BASE_URL}/auditoriums`;
       const options = getFetchOptions();
       const data = await makeAPICall(url, options);
 
       if (data.success) {
-        const providersData = data.data.providers || [];
-        const mappedProviders = providersData.map((provider, index) => ({
+        const auditoriumsData = data.data.auditoriums || [];
+        const mappedAuditoriums = auditoriumsData.map((auditorium, index) => ({
           id: index + 1,
-          _id: provider._id,
-          storeInfo: provider.storeName || 'Unknown Store',
-          ownerInfo: `${provider.ownerFirstName || ''} ${provider.ownerLastName || ''} (${provider.ownerPhone || 'N/A'})`,
-          zone: provider.zone?.name || 'N/A',
-          zoneId: provider.zone?._id || '',
-          featured: provider.isFeatured || false,
-          status: provider.isActive || false,
-          storeName: provider.storeName || '',
-          storeAddress: provider.storeAddress || '',
-          minimumDeliveryTime: provider.minimumDeliveryTime || '',
-          maximumDeliveryTime: provider.maximumDeliveryTime || '',
-          latitude: provider.latitude || '',
-          longitude: provider.longitude || '',
-          ownerFirstName: provider.ownerFirstName || '',
-          ownerLastName: provider.ownerLastName || '',
-          ownerPhone: provider.ownerPhone || '',
-          ownerEmail: provider.ownerEmail || '',
-          businessTIN: provider.businessTIN || '',
-          tinExpireDate: provider.tinExpireDate || '',
-          logo: provider.logo || null,
-          coverImage: provider.coverImage || null,
-          tinCertificate: provider.tinCertificate || null
+          _id: auditorium._id,
+          storeInfo: auditorium.storeName || 'Unknown Auditorium',
+          ownerInfo: `${auditorium.ownerFirstName || ''} ${auditorium.ownerLastName || ''} (${auditorium.ownerPhone || 'N/A'})`,
+          zone: auditorium.zone?.name || 'N/A',
+          zoneId: auditorium.zone?._id || '',
+          featured: auditorium.isFeatured || false,
+          status: auditorium.isActive || false,
+          storeName: auditorium.storeName || '',
+          storeAddress: auditorium.storeAddress || '',
+          minimumDeliveryTime: auditorium.minimumDeliveryTime || '',
+          maximumDeliveryTime: auditorium.maximumDeliveryTime || '',
+          latitude: auditorium.latitude || '',
+          longitude: auditorium.longitude || '',
+          ownerFirstName: auditorium.ownerFirstName || '',
+          ownerLastName: auditorium.ownerLastName || '',
+          ownerPhone: auditorium.ownerPhone || '',
+          ownerEmail: auditorium.ownerEmail || '',
+          businessTIN: auditorium.businessTIN || '',
+          tinExpireDate: auditorium.tinExpireDate || '',
+          logo: auditorium.logo
+            ? auditorium.logo.startsWith('http')
+              ? auditorium.logo
+              : `${API_BASE_URL}/${auditorium.logo.replace(/^\//, '')}`
+            : null,
+          coverImage: auditorium.coverImage || null,
+          tinCertificate: auditorium.tinCertificate || null
         }));
-        setProviders(mappedProviders);
+        setAuditoriums(mappedAuditoriums);
       } else {
-        throw new Error(data.message || 'Failed to fetch providers');
+        throw new Error(data.message || 'Failed to fetch auditoriums');
       }
     } catch (error) {
-      console.error('Error fetching providers:', error);
+      console.error('Error fetching auditoriums:', error);
       setNotification({
         open: true,
-        message: `Error fetching providers: ${error.message}`,
+        message: `Error fetching auditoriums: ${error.message}`,
         severity: 'error'
       });
     } finally {
@@ -238,28 +242,27 @@ const ProvidersList = () => {
     }
   };
 
-  // Handle Featured Toggle
   const handleFeaturedToggle = useCallback(
     async (_id) => {
       const toggleKey = `${_id}-featured`;
       if (toggleLoading[toggleKey]) return;
 
-      const provider = providers.find((p) => p._id === _id);
-      if (!provider) {
+      const auditorium = auditoriums.find((a) => a._id === _id);
+      if (!auditorium) {
         setNotification({
           open: true,
-          message: 'Provider not found',
+          message: 'Auditorium not found',
           severity: 'error'
         });
         return;
       }
 
-      const newValue = !provider.featured;
+      const newValue = !auditorium.featured;
       setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
-      setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, featured: newValue } : p)));
+      setAuditoriums((prev) => prev.map((a) => (a._id === _id ? { ...a, featured: newValue } : a)));
 
       try {
-        const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-featured`;
+        const endpoint = `${API_BASE_URL}/auditoriums/${_id}/toggle-featured`;
         const options = getFetchOptions('PATCH');
         const response = await fetch(endpoint, options);
 
@@ -271,17 +274,17 @@ const ProvidersList = () => {
         const data = await response.json();
         if (!data.success) throw new Error(data.message || 'Update failed');
 
-        setProviders((prev) =>
-          prev.map((p) =>
-            p._id === _id
-              ? { ...p, featured: data.data.provider.isFeatured ?? p.featured }
-              : p
+        setAuditoriums((prev) =>
+          prev.map((a) =>
+            a._id === _id
+              ? { ...a, featured: data.data.auditorium.isFeatured ?? a.featured }
+              : a
           )
         );
 
         setNotification({
           open: true,
-          message: `${provider.storeInfo} featured status updated successfully`,
+          message: `${auditorium.storeInfo} featured status updated successfully`,
           severity: 'success'
         });
       } catch (error) {
@@ -289,7 +292,7 @@ const ProvidersList = () => {
           message: error.message,
           stack: error.stack
         });
-        setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, featured: !newValue } : p)));
+        setAuditoriums((prev) => prev.map((a) => (a._id === _id ? { ...a, featured: !newValue } : a)));
 
         setNotification({
           open: true,
@@ -304,31 +307,30 @@ const ProvidersList = () => {
         });
       }
     },
-    [providers, API_BASE_URL, toggleLoading]
+    [auditoriums, API_BASE_URL, toggleLoading]
   );
 
-  // Handle Status Toggle
   const handleStatusToggle = useCallback(
     async (_id) => {
       const toggleKey = `${_id}-status`;
       if (toggleLoading[toggleKey]) return;
 
-      const provider = providers.find((p) => p._id === _id);
-      if (!provider) {
+      const auditorium = auditoriums.find((a) => a._id === _id);
+      if (!auditorium) {
         setNotification({
           open: true,
-          message: 'Provider not found',
+          message: 'Auditorium not found',
           severity: 'error'
         });
         return;
       }
 
-      const newValue = !provider.status;
+      const newValue = !auditorium.status;
       setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
-      setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, status: newValue } : p)));
+      setAuditoriums((prev) => prev.map((a) => (a._id === _id ? { ...a, status: newValue } : a)));
 
       try {
-        const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-status`;
+        const endpoint = `${API_BASE_URL}/auditoriums/${_id}/toggle-status`;
         const options = getFetchOptions('PATCH');
         const response = await fetch(endpoint, options);
 
@@ -340,17 +342,17 @@ const ProvidersList = () => {
         const data = await response.json();
         if (!data.success) throw new Error(data.message || 'Update failed');
 
-        setProviders((prev) =>
-          prev.map((p) =>
-            p._id === _id
-              ? { ...p, status: data.data.provider.isActive ?? p.status }
-              : p
+        setAuditoriums((prev) =>
+          prev.map((a) =>
+            a._id === _id
+              ? { ...a, status: data.data.auditorium.isActive ?? a.status }
+              : a
           )
         );
 
         setNotification({
           open: true,
-          message: `${provider.storeInfo} status updated successfully`,
+          message: `${auditorium.storeInfo} status updated successfully`,
           severity: 'success'
         });
       } catch (error) {
@@ -358,7 +360,7 @@ const ProvidersList = () => {
           message: error.message,
           stack: error.stack
         });
-        setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, status: !newValue } : p)));
+        setAuditoriums((prev) => prev.map((a) => (a._id === _id ? { ...a, status: !newValue } : a)));
 
         setNotification({
           open: true,
@@ -373,47 +375,47 @@ const ProvidersList = () => {
         });
       }
     },
-    [providers, API_BASE_URL, toggleLoading]
+    [auditoriums, API_BASE_URL, toggleLoading]
   );
 
   const handleDeleteConfirm = async () => {
-    const storeName = providerToDelete.storeInfo;
+    const storeName = auditoriumToDelete.storeInfo;
     try {
-      const url = `${API_BASE_URL}/providers/${providerToDelete._id}`;
+      const url = `${API_BASE_URL}/auditoriums/${auditoriumToDelete._id}`;
       const options = getFetchOptions('DELETE');
       const data = await makeAPICall(url, options);
 
       if (data.success) {
-        setProviders((prev) => prev.filter((p) => p._id !== providerToDelete._id));
+        setAuditoriums((prev) => prev.filter((a) => a._id !== auditoriumToDelete._id));
         setNotification({
           open: true,
           message: `${storeName} has been deleted successfully`,
           severity: 'success'
         });
       } else {
-        throw new Error(data.message || 'Failed to delete provider');
+        throw new Error(data.message || 'Failed to delete auditorium');
       }
     } catch (error) {
-      console.error('Error deleting provider:', error);
+      console.error('Error deleting auditorium:', error);
       setNotification({
         open: true,
-        message: `Error deleting provider: ${error.message}`,
+        message: `Error deleting auditorium: ${error.message}`,
         severity: 'error'
       });
     } finally {
       setOpenDeleteDialog(false);
-      setProviderToDelete(null);
+      setAuditoriumToDelete(null);
     }
   };
 
-  const handleDeleteClick = (provider) => {
-    setProviderToDelete(provider);
+  const handleDeleteClick = (auditorium) => {
+    setAuditoriumToDelete(auditorium);
     setOpenDeleteDialog(true);
   };
 
   const handleDeleteCancel = () => {
     setOpenDeleteDialog(false);
-    setProviderToDelete(null);
+    setAuditoriumToDelete(null);
   };
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -426,23 +428,23 @@ const ProvidersList = () => {
     setNotification({ ...notification, open: false });
   };
 
-  const filteredProviders = providers.filter((provider) => {
-    const matchesZone = selectedZone === 'All Zones' || provider.zone === selectedZone;
+  const filteredAuditoriums = auditoriums.filter((auditorium) => {
+    const matchesZone = selectedZone === 'All Zones' || auditorium.zone === selectedZone;
     const matchesSearch =
-      provider.storeInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      provider.ownerInfo.toLowerCase().includes(searchTerm.toLowerCase());
+      auditorium.storeInfo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      auditorium.ownerInfo.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesZone && matchesSearch;
   });
 
   const exportToCSV = () => {
-    const headers = ['Sl', 'Store Information', 'Owner Information', 'Zone', 'Featured', 'Status'];
-    const csvData = filteredProviders.map((provider) => [
-      provider.id,
-      `"${provider.storeInfo}"`,
-      `"${provider.ownerInfo}"`,
-      `"${provider.zone}"`,
-      provider.featured ? 'Yes' : 'No',
-      provider.status ? 'Active' : 'Inactive'
+    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status'];
+    const csvData = filteredAuditoriums.map((auditorium) => [
+      auditorium.id,
+      `"${auditorium.storeInfo}"`,
+      `"${auditorium.ownerInfo}"`,
+      `"${auditorium.zone}"`,
+      auditorium.featured ? 'Yes' : 'No',
+      auditorium.status ? 'Active' : 'Inactive'
     ]);
 
     const csvContent = [headers.join(','), ...csvData.map((row) => row.join(','))].join('\n');
@@ -451,7 +453,7 @@ const ProvidersList = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `providers_list_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `auditoriums_list_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -466,23 +468,23 @@ const ProvidersList = () => {
   };
 
   const exportToExcel = () => {
-    const headers = ['Sl', 'Store Information', 'Owner Information', 'Zone', 'Featured', 'Status'];
+    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status'];
     let excelContent = `
       <table border="1">
         <thead>
           <tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr>
         </thead>
         <tbody>
-          ${filteredProviders
+          ${filteredAuditoriums
             .map(
-              (provider) => `
+              (auditorium) => `
             <tr>
-              <td>${provider.id}</td>
-              <td>${provider.storeInfo}</td>
-              <td>${provider.ownerInfo}</td>
-              <td>${provider.zone}</td>
-              <td>${provider.featured ? 'Yes' : 'No'}</td>
-              <td>${provider.status ? 'Active' : 'Inactive'}</td>
+              <td>${auditorium.id}</td>
+              <td>${auditorium.storeInfo}</td>
+              <td>${auditorium.ownerInfo}</td>
+              <td>${auditorium.zone}</td>
+              <td>${auditorium.featured ? 'Yes' : 'No'}</td>
+              <td>${auditorium.status ? 'Active' : 'Inactive'}</td>
             </tr>
           `
             )
@@ -495,7 +497,7 @@ const ProvidersList = () => {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `providers_list_${new Date().toISOString().split('T')[0]}.xls`);
+    link.setAttribute('download', `auditoriums_list_${new Date().toISOString().split('T')[0]}.xls`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -513,15 +515,15 @@ const ProvidersList = () => {
     <TableContainer component={Paper} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', p: 2, bgcolor: '#f5f5f5', gap: 1 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ bgcolor: '#e3f2fd', p: 1, borderRadius: 1 }}>Total stores: {providers.length}</Box>
-          <Box sx={{ bgcolor: '#fff3e0', p: 1, borderRadius: 1 }}>Active stores: {providers.filter((p) => p.status).length}</Box>
-          <Box sx={{ bgcolor: '#e0f7fa', p: 1, borderRadius: 1 }}>Inactive stores: {providers.filter((p) => !p.status).length}</Box>
-          <Box sx={{ bgcolor: '#fce4ec', p: 1, borderRadius: 1 }}>Newly joined stores: 0</Box>
+          <Box sx={{ bgcolor: '#e3f2fd', p: 1, borderRadius: 1 }}>Total auditoriums: {auditoriums.length}</Box>
+          <Box sx={{ bgcolor: '#fff3e0', p: 1, borderRadius: 1 }}>Active auditoriums: {auditoriums.filter((a) => a.status).length}</Box>
+          <Box sx={{ bgcolor: '#e0f7fa', p: 1, borderRadius: 1 }}>Inactive auditoriums: {auditoriums.filter((a) => !a.status).length}</Box>
+          <Box sx={{ bgcolor: '#fce4ec', p: 1, borderRadius: 1 }}>Newly joined auditoriums: 0</Box>
         </Box>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           <Box sx={{ bgcolor: 'green.50', p: 1, borderRadius: 1 }}>Total Transactions: 0</Box>
           <Box sx={{ bgcolor: 'green.50', p: 1, borderRadius: 1 }}>Commission Earned: $0</Box>
-          <Box sx={{ bgcolor: '#ffebee', p: 1, borderRadius: 1 }}>Total Store Withdraws: $0</Box>
+          <Box sx={{ bgcolor: '#ffebee', p: 1, borderRadius: 1 }}>Total Auditorium Withdraws: $0</Box>
         </Box>
       </Box>
 
@@ -537,7 +539,7 @@ const ProvidersList = () => {
           sx={{ minWidth: 150, bgcolor: 'white', borderRadius: 1 }}
         >
           <MenuItem value="All Zones">All Zones</MenuItem>
-          {[...new Set(providers.map((p) => p.zone))].map((zone) => (
+          {[...new Set(auditoriums.map((a) => a.zone))].map((zone) => (
             <MenuItem key={zone} value={zone}>
               {zone}
             </MenuItem>
@@ -546,7 +548,7 @@ const ProvidersList = () => {
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           <TextField
-            placeholder="Search Store Name"
+            placeholder="Search Auditorium Name"
             variant="outlined"
             size="small"
             value={searchTerm}
@@ -574,7 +576,7 @@ const ProvidersList = () => {
       {loading ? (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
           <CircularProgress size={20} />
-          <Typography>Loading providers...</Typography>
+          <Typography>Loading auditoriums...</Typography>
         </Box>
       ) : (
         <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
@@ -582,7 +584,7 @@ const ProvidersList = () => {
             <TableHead sx={{ position: 'sticky', top: 0, bgcolor: '#f5f5f5', zIndex: 1 }}>
               <TableRow>
                 <TableCell>Sl</TableCell>
-                <TableCell>Store Information</TableCell>
+                <TableCell>Auditorium Name</TableCell>
                 <TableCell>Owner Information</TableCell>
                 <TableCell>Zone</TableCell>
                 <TableCell>Featured</TableCell>
@@ -591,42 +593,45 @@ const ProvidersList = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredProviders.map((provider) => {
-                const featuredToggleKey = `${provider._id}-featured`;
-                const statusToggleKey = `${provider._id}-status`;
+              {filteredAuditoriums.map((auditorium) => {
+                const featuredToggleKey = `${auditorium._id}-featured`;
+                const statusToggleKey = `${auditorium._id}-status`;
 
                 return (
-                  <TableRow key={provider.id}>
-                    <TableCell>{provider.id}</TableCell>
-                    <TableCell>{provider.storeInfo}</TableCell>
-                    <TableCell>{provider.ownerInfo}</TableCell>
-                    <TableCell>{provider.zone}</TableCell>
+                  <TableRow key={auditorium.id}>
+                    <TableCell>{auditorium.id}</TableCell>
+                    <TableCell>{auditorium.storeInfo}</TableCell>
+                    <TableCell>{auditorium.ownerInfo}</TableCell>
+                    <TableCell>{auditorium.zone}</TableCell>
                     <TableCell>
                       <Switch
-                        checked={provider.featured}
+                        checked={auditorium.featured}
                         color="primary"
-                        onChange={() => handleFeaturedToggle(provider._id)}
+                        onChange={() => handleFeaturedToggle(auditorium._id)}
                         disabled={toggleLoading[featuredToggleKey]}
                       />
                       {toggleLoading[featuredToggleKey] && <CircularProgress size={16} sx={{ ml: 1 }} />}
                     </TableCell>
                     <TableCell>
                       <Switch
-                        checked={provider.status}
+                        checked={auditorium.status}
                         color="primary"
-                        onChange={() => handleStatusToggle(provider._id)}
+                        onChange={() => handleStatusToggle(auditorium._id)}
                         disabled={toggleLoading[statusToggleKey]}
                       />
                       {toggleLoading[statusToggleKey] && <CircularProgress size={16} sx={{ ml: 1 }} />}
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                      <IconButton color="primary" onClick={() => alert(`Viewing store: ${provider.storeInfo}`)}>
+                      <IconButton color="primary" onClick={() => alert(`Viewing auditorium: ${auditorium.storeInfo}`)}>
                         <VisibilityOutlined />
                       </IconButton>
-                      <IconButton color="primary" onClick={() => navigate('/providers/edit', { state: { provider } })}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => navigate('/auditoriums/edit', { state: { auditorium } })}
+                      >
                         <Edit />
                       </IconButton>
-                      <IconButton color="error" onClick={() => handleDeleteClick(provider)}>
+                      <IconButton color="error" onClick={() => handleDeleteClick(auditorium)}>
                         <Delete />
                       </IconButton>
                     </TableCell>
@@ -652,7 +657,7 @@ const ProvidersList = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete the store "<strong>{providerToDelete?.storeInfo}</strong>"? This action cannot be undone.
+            Are you sure you want to delete the auditorium "<strong>{auditoriumToDelete?.storeInfo}</strong>"? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 2 }}>
@@ -679,4 +684,4 @@ const ProvidersList = () => {
   );
 };
 
-export default ProvidersList;
+export default AuditoriumsList;

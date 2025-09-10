@@ -248,7 +248,7 @@ export default function ProfileSection() {
                               : theme.palette.primary.light
                         }}
                       >
-                        Sabka Pro
+                        Book My Event
                       </Typography>
                       <Typography
                         variant="subtitle2"

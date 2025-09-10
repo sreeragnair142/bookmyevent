@@ -53,16 +53,16 @@ const isValidObjectId = (id) => {
 // Utility to validate and construct image URLs
 const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
-  
-  // If it's already a full URL, return as is
+
+  // Already a full URL
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:image/')) {
     return imagePath;
   }
-  
-  // Construct full URL for relative paths
+
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-  return `${API_BASE_URL}/${imagePath}`;
+  return `${API_BASE_URL}/${imagePath.replace(/^\/+/, '')}`; 
 };
+
 
 // Utility to validate image URLs
 const isValidImageUrl = (url) => {
@@ -799,7 +799,7 @@ export default function Banner() {
                         <TableCell>{index + 1}</TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <img
+                            {/* <img
                               src={imageUrl || 'https://via.placeholder.com/50'}
                               alt={`${banner.title} preview`}
                               style={{
@@ -813,7 +813,7 @@ export default function Banner() {
                               onError={(e) => {
                                 e.target.src = 'https://via.placeholder.com/50';
                               }}
-                            />
+                            /> */}
                             <Typography>{banner.title}</Typography>
                           </Box>
                         </TableCell>

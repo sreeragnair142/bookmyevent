@@ -1,10 +1,14 @@
 // menu-items/auditorium/customers.js
-import { IconUsers, IconUserPlus, IconUserCheck } from '@tabler/icons-react';
+import {
+  IconPhoto,
+  IconTicket,
+  IconBell
+} from '@tabler/icons-react';
 
 const icons = {
-  IconUsers,
-  IconUserPlus,
-  IconUserCheck
+  IconPhoto,     // for Banners
+  IconTicket,    // for Coupons
+  IconBell       // for Push Notifications
 };
 
 const auditoriummanagement = {
@@ -17,7 +21,7 @@ const auditoriummanagement = {
       title: 'Banners',
       type: 'item',
       url: '/auditorium/banner',
-      icon: icons.IconUsers,
+      icon: icons.IconPhoto,
       breadcrumbs: false
     },
     {
@@ -25,15 +29,15 @@ const auditoriummanagement = {
       title: 'Coupons',
       type: 'item',
       url: '/auditorium/coupons',
-      icon: icons.IconUserPlus,
+      icon: icons.IconTicket,
       breadcrumbs: false
     },
     {
       id: 'Push-notifications',
-      title: 'Pushnotifications',
+      title: 'Push Notifications',
       type: 'item',
       url: '/auditorium/pushnotifications',
-      icon: icons.IconUserCheck,
+      icon: icons.IconBell,
       breadcrumbs: false
     }
   ]

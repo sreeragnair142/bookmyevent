@@ -25,25 +25,26 @@ import customers from './auditorium/auditoriummanagement';
 import bookings from './auditorium/vehiclemanagement';
 import Providermanagement from './auditorium/providermanagement';
 import management from './auditorium/management';
+import auditoriumsections from './auditorium/auditoriumsections';
 
 // ==============================|| DYNAMIC MENU ITEMS ||============================== //
 
 // Define menu items for each module
 const moduleMenuItems = {
   crm: {
-    items: [tripmanagemet, Promotionmgt, vehiclemgt, Providermgt, pages]
+    items: [tripmanagemet, Promotionmgt, vehiclemgt, Providermgt]
   },
   
   rental: {
-    items: [tripmanagemet, Promotionmgt, vehiclemgt, Providermgt, pages]
+    items: [dashboard,tripmanagemet, Promotionmgt, vehiclemgt, Providermgt]
   },
   
   events: {
-    items: [tripmanagemet, Promotionmgt, vehiclemgt, Providermgt, pages]
+    items: [tripmanagemet, Promotionmgt, vehiclemgt, Providermgt]
   },
   
   auditorium: {
-    items: [dashboard,management,auditoriummanagement,Providermanagement, pages] 
+    items: [dashboard,management,auditoriummanagement,auditoriumsections,Providermanagement] 
   }
 };
 

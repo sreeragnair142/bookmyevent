@@ -57,49 +57,49 @@ const management = {
           id: 'all-leads',
           title: 'All ',
           type: 'item',
-          url: '/leads'
+          url: '/bookings/all'
         },
         {
           id: 'new-leads',
           title: 'Scheduled',
           type: 'item',
-          url: '/leads/new'
+          url: '/bookings/scheduled'
         },
         {
           id: 'follow-up',
           title: 'Pending',
           type: 'item',
-          url: '/leads/follow-up'
+          url: '/bookings/Pending'
         },
         {
           id: 'converted',
           title: 'Confirmed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/bookings/confirmed'
         },
         {
           id: 'converted',
           title: 'Ongoing',
           type: 'item',
-          url: '/leads/converted'
+          url: '/bookings/ongoing'
         },
         {
           id: 'converted',
           title: 'Completed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/bookings/completed'
         },
         {
           id: 'converted',
           title: 'Canceled',
           type: 'item',
-          url: '/leads/converted'
+          url: '/bookings/cancelled'
         },
         {
           id: 'converted',
           title: 'Payment failed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/bookings/paymentfailedbookings'
         }
       ]
     },

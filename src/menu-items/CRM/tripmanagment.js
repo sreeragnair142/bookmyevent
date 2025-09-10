@@ -57,49 +57,49 @@ const tripmanagemet = {
           id: 'all-leads',
           title: 'All ',
           type: 'item',
-          url: '/leads'
+         url: '/trips/alltrips'
         },
         {
           id: 'new-leads',
           title: 'Scheduled',
           type: 'item',
-          url: '/leads/new'
+          url: '/trips/scheduled'
         },
         {
           id: 'follow-up',
           title: 'Pending',
           type: 'item',
-          url: '/leads/follow-up'
+          url: '/trips/pending'
         },
         {
           id: 'converted',
           title: 'Confirmed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/trips/confirmed'
         },
         {
           id: 'converted',
           title: 'Ongoing',
           type: 'item',
-          url: '/leads/converted'
+          url: '/trips/ongoing'
         },
         {
           id: 'converted',
           title: 'Completed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/trips/completed'
         },
         {
           id: 'converted',
           title: 'Canceled',
           type: 'item',
-          url: '/leads/converted'
+          url: '/trips/cancelled'
         },
         {
           id: 'converted',
           title: 'Payment failed',
           type: 'item',
-          url: '/leads/converted'
+          url: '/trips/paymentfailed'
         }
       ]
     },

@@ -33,7 +33,7 @@ const Providermanagement = {
       id: 'Auditorium List',
       title: 'Auditorium List',
       type: 'item',
-      url: '/auditorium/providerslist',
+      url: '/auditorium/auditoriumlist',
       icon: icons.IconTools,
       breadcrumbs: false
     }

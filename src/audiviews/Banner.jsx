@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Tabs,
   Tab,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Switch,
   TextField,
+  TableContainer,
   Select,
   MenuItem,
   FormControl,
@@ -12,17 +19,16 @@ import {
   Typography,
   Paper,
   Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Switch,
+  Card,
+  CardContent,
+  CardMedia,
+  Chip,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Divider,
   IconButton,
   InputAdornment,
-  Divider,
-  Alert,
-  Snackbar,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -39,7 +45,31 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 
-// Styled components (unchanged)
+// Custom ObjectId validator for the frontend
+const isValidObjectId = (id) => {
+  return /^[0-9a-fA-F]{24}$/.test(id);
+};
+
+// Utility to validate and construct image URLs
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+
+  // Already a full URL
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://') || imagePath.startsWith('data:image/')) {
+    return imagePath;
+  }
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  return `${API_BASE_URL}/${imagePath.replace(/^\/+/, '')}`;
+};
+
+// Utility to validate image URLs
+const isValidImageUrl = (url) => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image/');
+};
+
+// Styled components
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   margin: theme.spacing(2),
@@ -137,32 +167,7 @@ const SearchTextField = styled(TextField)(({ theme }) => ({
   }
 }));
 
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: 500,
-  color: '#374151',
-  backgroundColor: '#f0f4f8',
-  borderBottom: '1px solid #e0e0e0',
-  padding: theme.spacing(1.5),
-  '&:first-of-type': {
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8
-  },
-  '&:last-of-type': {
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8
-  }
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
-    backgroundColor: '#fff'
-  },
-  '&:nth-of-type(even)': {
-    backgroundColor: '#f9fafb'
-  }
-}));
-
-// Simplified TabPanel without TypeScript interface
+// TabPanel component
 function TabPanel({ children, value, index, ...other }) {
   return (
     <div role="tabpanel" hidden={value !== index} id={`tabpanel-${index}`} aria-labelledby={`tab-${index}`} {...other}>
@@ -171,73 +176,218 @@ function TabPanel({ children, value, index, ...other }) {
   );
 }
 
+// Memoized TableRow component to prevent unnecessary re-renders
+const BannerTableRow = React.memo(({ banner, index, handleImagePreview, handleEdit, handleDelete, handleToggle, handleBannerClick, togglingStatus }) => {
+  const imageUrl = useMemo(() => getImageUrl(banner.image), [banner.image]);
+
+  return (
+    <TableRow key={banner._id}>
+      <TableCell>{index + 1}</TableCell>
+      <TableCell>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <img
+            src={imageUrl || 'https://via.placeholder.com/50'}
+            alt={`${banner.title} preview`}
+            loading="lazy"
+            style={{
+              width: 50,
+              height: 30,
+              objectFit: 'cover',
+              borderRadius: 4,
+              cursor: imageUrl ? 'pointer' : 'default',
+            }}
+            onClick={() => {
+              if (imageUrl) {
+                handleBannerClick(banner._id); // Record click
+                handleImagePreview(imageUrl, banner.title);
+              }
+            }}
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/50';
+              e.target.onerror = null; // Prevent infinite error loop
+            }}
+          />
+          <Typography>{banner.title}</Typography>
+        </Box>
+      </TableCell>
+      <TableCell>{banner.bannerType || 'Unknown'}</TableCell>
+      <TableCell>
+        <Switch
+          checked={banner.isFeatured || false}
+          onChange={() => handleToggle(banner._id, 'isFeatured')}
+          color="primary"
+          disabled={togglingStatus[`${banner._id}-isFeatured`] || false}
+        />
+        {togglingStatus[`${banner._id}-isFeatured`] && (
+          <CircularProgress size={16} sx={{ ml: 1 }} />
+        )}
+      </TableCell>
+      <TableCell>
+        <Switch
+          checked={banner.isActive || false}
+          onChange={() => handleToggle(banner._id, 'isActive')}
+          color="success"
+          disabled={togglingStatus[`${banner._id}-isActive`] || false}
+        />
+        {togglingStatus[`${banner._id}-isActive`] && (
+          <CircularProgress size={16} sx={{ ml: 1 }} />
+        )}
+      </TableCell>
+      <TableCell>
+        <IconButton onClick={() => handleEdit(banner)} color="primary">
+          <EditIcon />
+        </IconButton>
+        <IconButton onClick={() => handleDelete(banner._id)} color="error">
+          <DeleteIcon />
+        </IconButton>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 export default function Banner() {
   const [tabValue, setTabValue] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [imagePreviewEn, setImagePreviewEn] = useState(null);
+  const [bannersLoading, setBannersLoading] = useState(true);
+  const [zonesLoading, setZonesLoading] = useState(true);
+  const [storesLoading, setStoresLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
-  
-  // Notification states
-  const [notification, setNotification] = useState({
-    open: false,
-    message: '',
-    severity: 'success' // 'success', 'error', 'warning', 'info'
-  });
-
+  const [banners, setBanners] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [togglingStatus, setTogglingStatus] = useState({});
   const [formData, setFormData] = useState({
     title: '',
-    titleEn: '',
+    description: '',
     zone: '',
-    zoneEn: '',
-    bannerType: 'Store wise',
-    bannerTypeEn: 'Store wise',
+    bannerType: 'default',
     store: '',
-    storeEn: '',
     bannerImage: null,
-    bannerImageEn: null,
-    additionalFile: null,
-    additionalFileEn: null
+    isFeatured: false,
+    isActive: true,
+    displayOrder: 0
   });
+  const [loading, setLoading] = useState(false);
 
-  const [banners, setBanners] = useState([
-    {
-      id: 1,
-      image: 'https://images.pexels.com/photos/2894944/pexels-photo-2894944.jpeg',
-      title: 'demo banner latest',
-      type: 'Default',
-      featured: false,
-      status: true
-    },
-    {
-      id: 2,
-      image: 'https://images.pexels.com/photos/3750717/pexels-photo-3750717.jpeg',
-      title: 'Demo Banner',
-      type: 'Store wise',
-      featured: false,
-      status: true
+  // Base API URL
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchBanners();
+    fetchZones();
+    fetchStores();
+  }, []);
+
+  // Fetch banners
+  const fetchBanners = async () => {
+    try {
+      setBannersLoading(true);
+      const response = await fetch(`${API_BASE_URL}/auditorium-banner`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        setBanners(data.data.banners || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch banners');
+      }
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+      showAlert(`Error fetching banners: ${error.message}`, 'error');
+      setBanners([]);
+    } finally {
+      setBannersLoading(false);
     }
-  ]);
-
-  const showNotification = (message, severity = 'success') => {
-    setNotification({
-      open: true,
-      message,
-      severity
-    });
   };
 
-  const handleCloseNotification = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
+  // Fetch zones
+  const fetchZones = async () => {
+    try {
+      setZonesLoading(true);
+      const response = await fetch(`${API_BASE_URL}/zones`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        setZones(data.data.zones || data.data || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch zones');
+      }
+    } catch (error) {
+      console.error('Error fetching zones:', error);
+      showAlert('Error fetching zones. Please ensure the zones API is available.', 'error');
+      setZones([]);
+    } finally {
+      setZonesLoading(false);
     }
-    setNotification({ ...notification, open: false });
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  // Fetch stores
+  const fetchStores = async () => {
+    try {
+      setStoresLoading(true);
+      const response = await fetch(`${API_BASE_URL}/stores`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        setStores(data.data.stores || data.data || []);
+      } else {
+        throw new Error(data.message || 'Failed to fetch stores');
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+      showAlert('Error fetching stores. Please ensure the stores API is available.', 'error');
+      setStores([]);
+    } finally {
+      setStoresLoading(false);
+    }
+  };
+
+  // Record banner click
+  const handleBannerClick = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auditorium-banner/${id}/click`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error recording banner click:', error);
+      // Silently fail to avoid disrupting user experience
+    }
+  };
+
+  const showAlert = (message, severity = 'success') => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setOpen(true);
   };
 
   const handleInputChange = (field) => (event) => {
@@ -247,665 +397,587 @@ export default function Banner() {
     });
   };
 
-  const handleImageUpload = (event, isEnglish = false) => {
-    const file = event.target.files?.[0];
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        showNotification('Please select a valid image file', 'error');
+        showAlert('Please select a valid image file', 'error');
         return;
       }
-
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        showNotification('Image size should be less than 5MB', 'error');
+        showAlert('Image size should be less than 5MB', 'error');
         return;
       }
-
-      const fieldName = isEnglish ? 'bannerImageEn' : 'bannerImage';
-      setFormData({
-        ...formData,
-        [fieldName]: file
-      });
-
-      // Create image preview
+      setFormData({ ...formData, bannerImage: file });
       const reader = new FileReader();
-      reader.onload = (e) => {
-        if (isEnglish) {
-          setImagePreviewEn(e.target.result);
-        } else {
-          setImagePreview(e.target.result);
-        }
-      };
+      reader.onload = (e) => setImagePreview(e.target.result);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleFileUpload = (event, isEnglish = false) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const fieldName = isEnglish ? 'additionalFileEn' : 'additionalFile';
-      setFormData({
-        ...formData,
-        [fieldName]: file
-      });
-      showNotification('File uploaded successfully', 'info');
-    }
+  const removeImagePreview = () => {
+    setImagePreview(null);
+    setFormData({ ...formData, bannerImage: null });
   };
 
-  const removeImagePreview = (isEnglish = false) => {
-    if (isEnglish) {
-      setImagePreviewEn(null);
-      setFormData({
-        ...formData,
-        bannerImageEn: null
+  const validateForm = () => {
+    const errors = [];
+    if (!formData.title.trim()) errors.push('Title is required');
+    if (!formData.zone) errors.push('Zone is required');
+    if (!formData.bannerImage && !editingId) errors.push('Banner image is required');
+    if (!['default', 'store_wise', 'zone_wise'].includes(formData.bannerType)) {
+      errors.push('Invalid banner type');
+    }
+    if (formData.bannerType === 'store_wise' && !formData.store) {
+      errors.push('Store is required for store-wise banners');
+    }
+    if (formData.store && !isValidObjectId(formData.store)) {
+      errors.push('Invalid store ID');
+    }
+    if (formData.displayOrder && isNaN(parseInt(formData.displayOrder))) {
+      errors.push('Display order must be a valid number');
+    }
+    return errors;
+  };
+
+  const handleSubmit = async () => {
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      showAlert(validationErrors.join(', '), 'error');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const submitFormData = new FormData();
+      submitFormData.append('title', formData.title);
+      submitFormData.append('description', formData.description);
+      submitFormData.append('zone', formData.zone);
+      submitFormData.append('bannerType', formData.bannerType);
+      if (formData.store && isValidObjectId(formData.store)) {
+        submitFormData.append('store', formData.store);
+      }
+      if (formData.bannerImage) submitFormData.append('bannerImage', formData.bannerImage);
+      submitFormData.append('isFeatured', formData.isFeatured);
+      submitFormData.append('isActive', formData.isActive);
+      submitFormData.append('displayOrder', formData.displayOrder);
+
+      const url = editingId ? `${API_BASE_URL}/auditorium-banner/${editingId}` : `${API_BASE_URL}/auditorium-banners`;
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: submitFormData
       });
-    } else {
-      setImagePreview(null);
-      setFormData({
-        ...formData,
-        bannerImage: null
-      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        showAlert(editingId ? 'Banner updated successfully!' : 'Banner created successfully!', 'success');
+        fetchBanners();
+        handleReset();
+      } else {
+        throw new Error(data.message || 'Failed to submit banner');
+      }
+    } catch (error) {
+      console.error('Error submitting banner:', error);
+      showAlert(`Error submitting banner: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleReset = () => {
     setFormData({
       title: '',
-      titleEn: '',
+      description: '',
       zone: '',
-      zoneEn: '',
-      bannerType: 'Store wise',
-      bannerTypeEn: 'Store wise',
+      bannerType: 'default',
       store: '',
-      storeEn: '',
       bannerImage: null,
-      bannerImageEn: null,
-      additionalFile: null,
-      additionalFileEn: null
+      isFeatured: false,
+      isActive: true,
+      displayOrder: 0
     });
     setImagePreview(null);
-    setImagePreviewEn(null);
     setEditingId(null);
-    showNotification('Form reset successfully', 'info');
+    showAlert('Form reset successfully', 'info');
   };
 
-  const handleSubmit = () => {
-    const currentTitle = tabValue === 0 ? formData.title : formData.titleEn;
-    const currentImage = tabValue === 0 ? formData.bannerImage : formData.bannerImageEn;
-    const currentBannerType = tabValue === 0 ? formData.bannerType : formData.bannerTypeEn;
+  const handleToggle = async (id, field) => {
+    try {
+      const banner = banners.find((b) => b._id === id);
+      if (!banner) {
+        throw new Error('Banner not found');
+      }
 
-    if (!currentTitle || !currentImage) {
-      showNotification('Please fill in the title and select a banner image', 'error');
-      return;
+      const newValue = !banner[field];
+      const toggleKey = `${id}-${field}`;
+
+      setTogglingStatus(prev => ({ ...prev, [toggleKey]: true }));
+
+      const response = await fetch(`${API_BASE_URL}/auditorium-banner/${id}/toggle-status`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ [field]: newValue })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setBanners((prev) =>
+          prev.map((b) =>
+            b._id === id ? { ...b, [field]: newValue } : b
+          )
+        );
+        showAlert(
+          `Banner ${newValue ? 'activated' : 'deactivated'} for ${field === 'isActive' ? 'status' : 'featured'} successfully`,
+          'success'
+        );
+      } else {
+        throw new Error(data.message || `Failed to toggle ${field}`);
+      }
+    } catch (error) {
+      console.error(`Error toggling ${field}:`, error);
+      showAlert(`Error toggling ${field}: ${error.message}`, 'error');
+    } finally {
+      setTogglingStatus(prev => {
+        const newState = { ...prev };
+        delete newState[`${id}-${field}`];
+        return newState;
+      });
     }
+  };
 
-    // Create image URL for display
-    const imageUrl = currentImage ? URL.createObjectURL(currentImage) : '';
+  const handleEdit = async (banner) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auditorium-banner/${banner._id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        const bannerData = data.data.banner;
+        setFormData({
+          title: bannerData.title,
+          description: bannerData.description || '',
+          zone: bannerData.zone?._id || '',
+          bannerType: bannerData.bannerType,
+          store: bannerData.store?._id || '',
+          bannerImage: null,
+          isFeatured: bannerData.isFeatured,
+          isActive: bannerData.isActive,
+          displayOrder: bannerData.displayOrder
+        });
 
-    if (editingId) {
-      // Update existing banner
-      setBanners(prevBanners => 
-        prevBanners.map(banner => 
-          banner.id === editingId 
-            ? {
-                ...banner,
-                title: currentTitle,
-                type: currentBannerType,
-                image: imageUrl || banner.image
-              }
-            : banner
-        )
-      );
-      setEditingId(null);
-      showNotification('Banner updated successfully!', 'success');
-    } else {
-      // Add new banner
-      const newBanner = {
-        id: Math.max(...banners.map(b => b.id), 0) + 1,
-        image: imageUrl,
-        title: currentTitle,
-        type: currentBannerType,
-        featured: false,
-        status: true
-      };
-      setBanners(prevBanners => [...prevBanners, newBanner]);
-      showNotification('Banner created successfully!', 'success');
+        const imageUrl = getImageUrl(bannerData.image);
+        setImagePreview(imageUrl);
+
+        setEditingId(banner._id);
+        setTabValue(0);
+        showAlert(`Editing "${banner.title}"`, 'info');
+      } else {
+        throw new Error(data.message || 'Failed to fetch banner');
+      }
+    } catch (error) {
+      console.error('Error fetching banner:', error);
+      showAlert(`Error fetching banner: ${error.message}`, 'error');
     }
-
-    // Reset form after submission
-    setFormData({
-      title: '',
-      titleEn: '',
-      zone: '',
-      zoneEn: '',
-      bannerType: 'Store wise',
-      bannerTypeEn: 'Store wise',
-      store: '',
-      storeEn: '',
-      bannerImage: null,
-      bannerImageEn: null,
-      additionalFile: null,
-      additionalFileEn: null
-    });
-    setImagePreview(null);
-    setImagePreviewEn(null);
   };
 
-  const handleToggle = (id, field) => (event) => {
-    setBanners((prevBanners) => 
-      prevBanners.map((banner) => 
-        banner.id === id 
-          ? { ...banner, [field]: event.target.checked } 
-          : banner
-      )
-    );
-    
-    const banner = banners.find(b => b.id === id);
-    const fieldName = field === 'featured' ? 'Featured' : 'Status';
-    const action = event.target.checked ? 'enabled' : 'disabled';
-    showNotification(`${fieldName} ${action} for "${banner?.title}"`, 'info');
-  };
-
-  const handleEdit = (banner) => {
-    setFormData({
-      title: banner.title,
-      titleEn: banner.title,
-      zone: '',
-      zoneEn: '',
-      bannerType: banner.type,
-      bannerTypeEn: banner.type,
-      store: '',
-      storeEn: '',
-      bannerImage: null,
-      bannerImageEn: null,
-      additionalFile: null,
-      additionalFileEn: null
-    });
-    setEditingId(banner.id);
-    setImagePreview(banner.image);
-    setImagePreviewEn(banner.image);
-    setTabValue(0); // Switch to Default tab for editing
-    showNotification(`Editing "${banner.title}"`, 'info');
-  };
-
-  const handleDelete = (id) => {
-    const banner = banners.find(b => b.id === id);
+  const handleDelete = async (id) => {
+    const banner = banners.find((b) => b._id === id);
     if (window.confirm(`Are you sure you want to delete "${banner?.title}"?`)) {
-      setBanners(prevBanners => prevBanners.filter(banner => banner.id !== id));
-      showNotification(`Banner "${banner?.title}" deleted successfully`, 'success');
+      try {
+        const response = await fetch(`${API_BASE_URL}/auditorium-banner/${id}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success) {
+          setBanners((prev) => prev.filter((banner) => banner._id !== id));
+          showAlert(`Banner "${banner?.title}" deleted successfully`, 'success');
+        } else {
+          throw new Error(data.message || 'Failed to delete banner');
+        }
+      } catch (error) {
+        console.error('Error deleting banner:', error);
+        showAlert(`Error deleting banner: ${error.message}`, 'error');
+      }
     }
   };
 
   const handleImagePreview = (imageUrl, title) => {
-    setSelectedPreviewImage({ url: imageUrl, title });
-    setPreviewDialogOpen(true);
+    if (isValidImageUrl(imageUrl)) {
+      setSelectedPreviewImage({ url: imageUrl, title });
+      setPreviewDialogOpen(true);
+    } else {
+      showAlert('Invalid image URL for preview', 'error');
+    }
   };
 
-  // Filter banners based on search query
-  const filteredBanners = banners.filter(banner =>
-    banner.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBanners = useMemo(() => {
+    return banners.filter((banner) =>
+      banner.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [banners, searchQuery]);
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
       <StyledPaper elevation={0}>
-        {/* Tabs */}
-        <StyledTabs value={tabValue} onChange={handleTabChange} aria-label="banner tabs">
-          <Tab label="Default" id="tab-0" aria-controls="tabpanel-0" />
-          <Tab label="English(EN)" id="tab-1" aria-controls="tabpanel-1" />
-        </StyledTabs>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, flexWrap: 'wrap' }}>
+          <Typography variant="h4" fontWeight="bold">
+            Add New Banner
+          </Typography>
+        </Box>
+
+        <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
+          Default
+        </Typography>
 
         <TabPanel value={tabValue} index={0}>
           <Grid container rowSpacing={3} columnSpacing={3}>
-            {/* Title Field */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <TextField
                 fullWidth
-                label="Title (Default)"
+                label="Title *"
                 variant="outlined"
+                placeholder="Banner title"
                 value={formData.title}
                 onChange={handleInputChange('title')}
-                placeholder="New banner"
-                slotProps={{
-                  input: { sx: { borderRadius: 1 } }
-                }}
+                required
               />
             </Grid>
 
-            {/* Banner Image Upload */}
+            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
+              <TextField
+                fullWidth
+                label="Description"
+                variant="outlined"
+                placeholder="Banner description"
+                multiline
+                rows={3}
+                value={formData.description}
+                onChange={handleInputChange('description')}
+              />
+            </Grid>
+
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Typography variant="body2" sx={{ mb: 1, color: '#ef4444', fontWeight: 500 }}>
                 Banner image * (Ratio 3:1)
               </Typography>
-              <input accept="image/*" style={{ display: 'none' }} id="banner-upload" type="file" onChange={(e) => handleImageUpload(e, false)} />
-              <label htmlFor="banner-upload">
-                <ImageUploadArea role="button" tabIndex={0}>
-                  <ImageIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {formData.bannerImage ? formData.bannerImage.name : 'Click to upload banner image'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Supported formats: JPG, PNG, GIF (Max 5MB)
-                  </Typography>
-                </ImageUploadArea>
-              </label>
-
-              {/* Image Preview */}
+              <Box sx={{ border: '1px dashed grey', p: 2, textAlign: 'center' }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CloudUpload />}
+                  sx={{ width: '100%' }}
+                >
+                  {imagePreview ? 'Change Image' : 'Upload Image'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                  />
+                </Button>
+              </Box>
               {imagePreview && (
                 <ImagePreviewContainer>
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      display: 'block',
-                      cursor: 'pointer'
-                    }}
+                    style={{ width: '100%', height: 'auto', display: 'block', cursor: 'pointer' }}
+                    loading="lazy"
                     onClick={() => handleImagePreview(imagePreview, 'Banner Preview')}
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/300';
+                      e.target.onerror = null;
+                    }}
                   />
-                  <PreviewCloseButton size="small" onClick={() => removeImagePreview(false)}>
+                  <PreviewCloseButton size="small" onClick={removeImagePreview}>
                     <CloseIcon fontSize="small" />
                   </PreviewCloseButton>
                 </ImagePreviewContainer>
               )}
             </Grid>
 
-            {/* Zone Field */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="zone-label">Zone</InputLabel>
-                <Select
-                  labelId="zone-label"
-                  value={formData.zone}
-                  onChange={handleInputChange('zone')}
-                  label="Zone"
-                  sx={{ borderRadius: 1 }}
-                >
-                  <MenuItem value="">
-                    <em>---Select---</em>
-                  </MenuItem>
-                  <MenuItem value="zone1">Zone 1</MenuItem>
-                  <MenuItem value="zone2">Zone 2</MenuItem>
-                  <MenuItem value="zone3">Zone 3</MenuItem>
-                </Select>
-              </FormControl>
+              {zonesLoading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress size={20} />
+                  <Typography>Loading zones...</Typography>
+                </Box>
+              ) : (
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel id="zone-label">Zone *</InputLabel>
+                  <Select
+                    labelId="zone-label"
+                    value={formData.zone}
+                    onChange={handleInputChange('zone')}
+                    label="Zone *"
+                    required
+                  >
+                    <MenuItem value="">
+                      <em>---Select---</em>
+                    </MenuItem>
+                    {zones.map((zone) => (
+                      <MenuItem key={zone._id} value={zone._id}>
+                        {zone.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
             </Grid>
 
-            {/* Banner Type Field */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel id="banner-type-label">Banner type</InputLabel>
+                <InputLabel id="banner-type-label">Banner Type</InputLabel>
                 <Select
                   labelId="banner-type-label"
                   value={formData.bannerType}
                   onChange={handleInputChange('bannerType')}
-                  label="Banner type"
-                  sx={{ borderRadius: 1 }}
+                  label="Banner Type"
                 >
-                  <MenuItem value="Store wise">Store wise</MenuItem>
-                  <MenuItem value="Zone wise">Zone wise</MenuItem>
-                  <MenuItem value="Global">Global</MenuItem>
-                  <MenuItem value="Default">Default</MenuItem>
+                  <MenuItem value="default">Default</MenuItem>
+                  <MenuItem value="store_wise">Store Wise</MenuItem>
+                  <MenuItem value="zone_wise">Zone Wise</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Store Field */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="store-label">Store</InputLabel>
-                <Select
-                  labelId="store-label"
-                  value={formData.store}
-                  onChange={handleInputChange('store')}
-                  label="Store"
-                  sx={{ borderRadius: 1 }}
-                >
-                  <MenuItem value="">
-                    <em>---Select store---</em>
-                  </MenuItem>
-                  <MenuItem value="store1">Store 1</MenuItem>
-                  <MenuItem value="store2">Store 2</MenuItem>
-                  <MenuItem value="store3">Store 3</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* File Upload Button */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <input accept="*/*" style={{ display: 'none' }} id="file-upload" type="file" onChange={(e) => handleFileUpload(e, false)} />
-                <label htmlFor="file-upload">
-                  <Button
-                    variant="outlined"
-                    component="span"
-                    startIcon={<CloudUpload />}
-                    sx={{
-                      textTransform: 'none',
-                      borderColor: 'divider',
-                      color: 'text.secondary',
-                      borderRadius: 1,
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        backgroundColor: 'primary.light'
-                      }
-                    }}
-                  >
-                    Choose File
-                  </Button>
-                </label>
-                <Typography variant="body2" color="text.secondary">
-                  {formData.additionalFile ? formData.additionalFile.name : 'No file chosen'}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* Action Buttons */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <ResetButton variant="outlined" onClick={handleReset} startIcon={<Refresh />}>
-                  Reset
-                </ResetButton>
-                <SubmitButton variant="contained" onClick={handleSubmit}>
-                  {editingId ? 'Update' : 'Submit'}
-                </SubmitButton>
-              </Box>
-            </Grid>
-          </Grid>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          <Grid container rowSpacing={3} columnSpacing={3}>
-            {/* English Title Field */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Title (English)"
-                variant="outlined"
-                value={formData.titleEn}
-                onChange={handleInputChange('titleEn')}
-                placeholder="New banner"
-                slotProps={{
-                  input: { sx: { borderRadius: 1 } }
-                }}
-              />
-            </Grid>
-
-            {/* English Banner Image Upload */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <Typography variant="body2" sx={{ mb: 1, color: '#ef4444', fontWeight: 500 }}>
-                Banner image * (Ratio 3:1)
-              </Typography>
-              <input accept="image/*" style={{ display: 'none' }} id="banner-upload-en" type="file" onChange={(e) => handleImageUpload(e, true)} />
-              <label htmlFor="banner-upload-en">
-                <ImageUploadArea role="button" tabIndex={0}>
-                  <ImageIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {formData.bannerImageEn ? formData.bannerImageEn.name : 'Click to upload banner image'}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Supported formats: JPG, PNG, GIF (Max 5MB)
-                  </Typography>
-                </ImageUploadArea>
-              </label>
-
-              {/* English Image Preview */}
-              {imagePreviewEn && (
-                <ImagePreviewContainer>
-                  <img
-                    src={imagePreviewEn}
-                    alt="Preview"
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      display: 'block',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => handleImagePreview(imagePreviewEn, 'Banner Preview (English)')}
-                  />
-                  <PreviewCloseButton size="small" onClick={() => removeImagePreview(true)}>
-                    <CloseIcon fontSize="small" />
-                  </PreviewCloseButton>
-                </ImagePreviewContainer>
+              {formData.bannerType === 'store_wise' && (
+                <>
+                  {storesLoading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <CircularProgress size={20} />
+                      <Typography>Loading stores...</Typography>
+                    </Box>
+                  ) : (
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel id="store-label">Store</InputLabel>
+                      <Select
+                        labelId="store-label"
+                        value={formData.store}
+                        onChange={handleInputChange('store')}
+                        label="Store"
+                      >
+                        <MenuItem value="">
+                          <em>---Select store---</em>
+                        </MenuItem>
+                        {stores.map((store) => (
+                          <MenuItem key={store._id} value={store._id}>
+                            {store.storeName}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                </>
               )}
             </Grid>
 
-            {/* English Zone Field */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="zone-label-en">Zone</InputLabel>
-                <Select
-                  labelId="zone-label-en"
-                  value={formData.zoneEn}
-                  onChange={handleInputChange('zoneEn')}
-                  label="Zone"
-                  sx={{ borderRadius: 1 }}
-                >
-                  <MenuItem value="">
-                    <em>---Select---</em>
-                  </MenuItem>
-                  <MenuItem value="zone1">Zone 1</MenuItem>
-                  <MenuItem value="zone2">Zone 2</MenuItem>
-                  <MenuItem value="zone3">Zone 3</MenuItem>
-                </Select>
-              </FormControl>
+              <TextField
+                fullWidth
+                label="Display Order"
+                type="number"
+                variant="outlined"
+                value={formData.displayOrder}
+                onChange={handleInputChange('displayOrder')}
+                placeholder="0"
+              />
             </Grid>
 
-            {/* English Banner Type Field */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="banner-type-label-en">Banner type</InputLabel>
-                <Select
-                  labelId="banner-type-label-en"
-                  value={formData.bannerTypeEn}
-                  onChange={handleInputChange('bannerTypeEn')}
-                  label="Banner type"
-                  sx={{ borderRadius: 1 }}
-                >
-                  <MenuItem value="Store wise">Store wise</MenuItem>
-                  <MenuItem value="Zone wise">Zone wise</MenuItem>
-                  <MenuItem value="Global">Global</MenuItem>
-                  <MenuItem value="Default">Default</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* English Store Field */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="store-label-en">Store</InputLabel>
-                <Select
-                  labelId="store-label-en"
-                  value={formData.storeEn}
-                  onChange={handleInputChange('storeEn')}
-                  label="Store"
-                  sx={{ borderRadius: 1 }}
-                >
-                  <MenuItem value="">
-                    <em>---Select store---</em>
-                  </MenuItem>
-                  <MenuItem value="store1">Store 1</MenuItem>
-                  <MenuItem value="store2">Store 2</MenuItem>
-                  <MenuItem value="store3">Store 3</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* English File Upload Button */}
-            <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <input accept="*/*" style={{ display: 'none' }} id="file-upload-en" type="file" onChange={(e) => handleFileUpload(e, true)} />
-                <label htmlFor="file-upload-en">
-                  <Button
-                    variant="outlined"
-                    component="span"
-                    startIcon={<CloudUpload />}
-                    sx={{
-                      textTransform: 'none',
-                      borderColor: 'divider',
-                      color: 'text.secondary',
-                      borderRadius: 1,
-                      '&:hover': {
-                        borderColor: 'primary.main',
-                        backgroundColor: 'primary.light'
-                      }
-                    }}
-                  >
-                    Choose File
-                  </Button>
-                </label>
-                <Typography variant="body2" color="text.secondary">
-                  {formData.additionalFileEn ? formData.additionalFileEn.name : 'No file chosen'}
-                </Typography>
-              </Box>
-            </Grid>
-
-            {/* English Action Buttons */}
             <Grid size={{ lg: 12, md: 12, sm: 12, xs: 12 }}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <ResetButton variant="outlined" onClick={handleReset} startIcon={<Refresh />}>
+                <ResetButton variant="outlined" onClick={handleReset} disabled={loading}>
                   Reset
                 </ResetButton>
-                <SubmitButton variant="contained" onClick={handleSubmit}>
-                  {editingId ? 'Update' : 'Submit'}
+                <SubmitButton
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} /> : null}
+                >
+                  {loading ? 'Submitting...' : editingId ? 'Update' : 'Submit'}
                 </SubmitButton>
               </Box>
             </Grid>
           </Grid>
         </TabPanel>
 
-        {/* Banner List Section */}
-        <Box sx={{ mt: 4 }}>
-          <Divider sx={{ mb: 3 }} />
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#374151' }}>
-                Banner List
-              </Typography>
-              <Box
-                sx={{
-                  backgroundColor: '#14b8a6',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: 24,
-                  height: 24,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}
-              >
-                {filteredBanners.length}
-              </Box>
-            </Box>
-
-            <SearchTextField
-              size="small"
-              placeholder="Search by title"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton size="small" sx={{ color: '#14b8a6' }}>
-                        <SearchIcon />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
-              sx={{ width: 300 }}
-            />
-          </Box>
-
-          <Table sx={{ minWidth: 650, borderRadius: 1, overflow: 'hidden' }}>
-            <TableHead>
-              <TableRow>
-                <StyledTableCell>SL</StyledTableCell>
-                <StyledTableCell>Title</StyledTableCell>
-                <StyledTableCell>Type</StyledTableCell>
-                <StyledTableCell>Featured</StyledTableCell>
-                <StyledTableCell>Status</StyledTableCell>
-                <StyledTableCell>Action</StyledTableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredBanners.map((banner, index) => (
-                <StyledTableRow key={banner.id}>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>{index + 1}</TableCell>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
+         <Box sx={{ mt: 5 }}>
+                  <Divider sx={{ mb: 3 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <img
-                        src={banner.image}
-                        alt={banner.title}
-                        style={{
-                          width: 100,
-                          height: 33,
-                          objectFit: 'cover',
-                          borderRadius: 4,
-                          cursor: 'pointer'
+                      <Typography variant="h4" fontWeight="bold">
+                        Existing Banners
+                      </Typography>
+                      <Box
+                        sx={{
+                          backgroundColor: '#14b8a6',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: 24,
+                          height: 24,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 600,
                         }}
-                        onClick={() => handleImagePreview(banner.image, banner.title)}
-                        onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/100x33?text=No+Image';
-                        }}
-                      />
-                      <Typography>{banner.title}</Typography>
+                      >
+                        {filteredBanners.length}
+                      </Box>
                     </Box>
-                  </TableCell>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>{banner.type}</TableCell>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
-                    <Switch checked={banner.featured} onChange={handleToggle(banner.id, 'featured')} color="primary" />
-                  </TableCell>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
-                    <Switch checked={banner.status} onChange={handleToggle(banner.id, 'status')} color="success" />
-                  </TableCell>
-                  <TableCell sx={{ padding: (theme) => theme.spacing(1.5) }}>
-                    <IconButton color="primary" size="small" onClick={() => handleEdit(banner)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(banner.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </StyledTableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredBanners.length === 0 && (
-            <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography color="text.secondary">
-                {searchQuery ? 'No banners found matching your search.' : 'No banners available.'}
-              </Typography>
-            </Box>
-          )}
-        </Box>
+                    <SearchTextField
+                      size="small"
+                      placeholder="Search by title"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton size="small" sx={{ color: '#14b8a6' }}>
+                                <SearchIcon />
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{ width: 300 }}
+                    />
+                  </Box>
+        
+                  {bannersLoading ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center', py: 4 }}>
+                      <CircularProgress size={24} />
+                      <Typography>Loading banners...</Typography>
+                    </Box>
+                  ) : filteredBanners.length > 0 ? (
+                    <TableContainer component={Paper} sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)', borderRadius: 8 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ backgroundColor: '#f5f7fa' }}>
+                            <TableCell sx={{ fontWeight: 500 }}>SL</TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>Title</TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>Type</TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>Featured</TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>Status</TableCell>
+                            <TableCell sx={{ fontWeight: 500 }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {filteredBanners.map((banner, index) => {
+                            const imageUrl = getImageUrl(banner.image);
+                            return (
+                              <TableRow key={banner._id}>
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    {/* <img
+                                      src={imageUrl || 'https://via.placeholder.com/50'}
+                                      alt={`${banner.title} preview`}
+                                      style={{
+                                        width: 50,
+                                        height: 30,
+                                        objectFit: 'cover',
+                                        borderRadius: 4,
+                                        cursor: imageUrl ? 'pointer' : 'default',
+                                      }}
+                                      onClick={() => imageUrl && handleImagePreview(imageUrl, banner.title)}
+                                      onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/50';
+                                      }}
+                                    /> */}
+                                    <Typography>{banner.title}</Typography>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>{banner.bannerType || 'Unknown'}</TableCell>
+                                <TableCell>
+                                  <Switch
+                                    checked={banner.isFeatured || false}
+                                    onChange={() => handleToggle(banner._id, 'isFeatured')}
+                                    color="primary"
+                                    disabled={togglingStatus[`${banner._id}-isFeatured`] || false}
+                                  />
+                                  {togglingStatus[`${banner._id}-isFeatured`] && (
+                                    <CircularProgress size={16} sx={{ ml: 1 }} />
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Switch
+                                    checked={banner.isActive || false}
+                                    onChange={() => handleToggle(banner._id, 'isActive')}
+                                    color="success"
+                                    disabled={togglingStatus[`${banner._id}-isActive`] || false}
+                                  />
+                                  {togglingStatus[`${banner._id}-isActive`] && (
+                                    <CircularProgress size={16} sx={{ ml: 1 }} />
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <IconButton onClick={() => handleEdit(banner)} color="primary">
+                                    <EditIcon />
+                                  </IconButton>
+                                  <IconButton onClick={() => handleDelete(banner._id)} color="error">
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  ) : (
+                    <Typography sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                      No banners found. Try adjusting your search or create a new banner.
+                    </Typography>
+                  )}
+                </Box>
       </StyledPaper>
 
-      {/* Notification Snackbar */}
       <Snackbar
-        open={notification.open}
-        autoHideDuration={4000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        open={open}
+        autoHideDuration={6000}
+        onClose={() => setOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
-          onClose={handleCloseNotification}
-          severity={notification.severity}
-          variant="filled"
+          onClose={() => setOpen(false)}
+          severity={alertSeverity}
           sx={{ width: '100%' }}
         >
-          {notification.message}
+          {alertMessage}
         </Alert>
       </Snackbar>
 
-      {/* Image Preview Dialog */}
       <Dialog
         open={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
@@ -926,8 +998,9 @@ export default function Banner() {
               style={{
                 width: '100%',
                 height: 'auto',
-                borderRadius: 8
+                borderRadius: 8,
               }}
+              loading="lazy"
             />
           )}
         </DialogContent>
