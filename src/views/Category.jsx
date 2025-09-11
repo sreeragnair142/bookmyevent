@@ -907,128 +907,164 @@ const fetchCategories = useCallback(async () => {
             )}
 
             {/* Table */}
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead sx={{ backgroundColor: '#fafafa' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>SI</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Id</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
-                    <TableCell sx={{
-                      fontWeight: 600,
-                      color: '#666',
-                      direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
-                    }}>
-                      Name ({languageTabs[tabValue].label})
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((category, index) => {
-                      const currentLang = getCurrentLanguageKey();
-                      return (
-                        <TableRow key={category.id} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
-                          <TableCell>{index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage}</TableCell>
-                          <TableCell>{category.id}</TableCell>
-                          <TableCell>
-                            {category.image ? (
-                              <Box
-                                sx={{
-                                  width: 50,
-                                  height: 35,
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                  border: '1px solid #e0e0e0'
-                                }}
-                              >
-                                <img
-                                  src={category.image}
-                                  alt={category.names[currentLang]}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                />
-                              </Box>
-                            ) : (
-                              <Box
-                                sx={{
-                                  width: 50,
-                                  height: 35,
-                                  borderRadius: 1,
-                                  backgroundColor: '#f5f5f5',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  border: '1px solid #e0e0e0'
-                                }}
-                              >
-                                <Typography variant="caption" color="text.secondary">
-                                  No Image
-                                </Typography>
-                              </Box>
-                            )}
-                          </TableCell>
-                          <TableCell sx={{
-                            fontWeight: 500,
-                            maxWidth: 200,
-                            direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
-                          }}>
-                            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                              {category.names[currentLang]}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={category.status}
-                              onChange={() => handleStatusToggle(category.id)}
-                              sx={{
-                                '& .MuiSwitch-switchBase.Mui-checked': { color: '#2196f3' },
-                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#2196f3' }
-                              }}
-                              disabled={loading}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <IconButton size="small" onClick={() => handleEdit(category.id)} sx={{ color: '#2196f3' }} disabled={loading}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteClick(category.id)} sx={{ color: '#f44336' }} disabled={loading}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: '#999' }}>
-                        <Stack spacing={2} alignItems="center">
-                          <Typography variant="h6" color="textSecondary">
-                            {loading ? 'Loading categories...' : (searchTerm ? `No categories found matching your search in ${languageTabs[tabValue].label}.` : 'No categories available.')}
-                          </Typography>
-                          {error ? (
-                            <Button variant="outlined" onClick={handleRetry}>
-                              Try Again
-                            </Button>
-                          ) : !loading && !searchTerm && (
-                            <Typography variant="body2" color="textSecondary">
-                              Create your first category using the form above
-                            </Typography>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+           <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+  <Table size="small">
+    <TableHead sx={{ backgroundColor: '#fafafa' }}>
+      <TableRow>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>SI</TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
+        <TableCell
+          sx={{
+            fontWeight: 600,
+            color: '#666',
+            direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
+          }}
+        >
+          Name ({languageTabs[tabValue].label})
+        </TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Status</TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Action</TableCell>
+      </TableRow>
+    </TableHead>
+
+    <TableBody>
+      {filteredCategories.length > 0 ? (
+        filteredCategories.map((category, index) => {
+          const currentLang = getCurrentLanguageKey();
+          return (
+            <TableRow
+              key={category.id}
+              sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}
+            >
+              {/* SI Column */}
+              <TableCell>
+                {index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage}
+              </TableCell>
+
+              {/* Image Column */}
+              <TableCell>
+                {category.image ? (
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 35,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      border: '1px solid #e0e0e0'
+                    }}
+                  >
+                    <img
+                      src={category.image}
+                      alt={category.names[currentLang]}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 35,
+                      borderRadius: 1,
+                      backgroundColor: '#f5f5f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid #e0e0e0'
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      No Image
+                    </Typography>
+                  </Box>
+                )}
+              </TableCell>
+
+              {/* Name Column */}
+              <TableCell
+                sx={{
+                  fontWeight: 500,
+                  maxWidth: 200,
+                  direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
+                }}
+              >
+                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                  {category.names[currentLang]}
+                </Typography>
+              </TableCell>
+
+              {/* Status Column */}
+              <TableCell>
+                <Switch
+                  checked={category.status}
+                  onChange={() => handleStatusToggle(category.id)}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#2196f3' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: '#2196f3'
+                    }
+                  }}
+                  disabled={loading}
+                />
+              </TableCell>
+
+              {/* Action Column */}
+              <TableCell>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEdit(category.id)}
+                    sx={{ color: '#2196f3' }}
+                    disabled={loading}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteClick(category.id)}
+                    sx={{ color: '#f44336' }}
+                    disabled={loading}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </TableCell>
+            </TableRow>
+          );
+        })
+      ) : (
+        <TableRow>
+          <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4, color: '#999' }}>
+            <Stack spacing={2} alignItems="center">
+              <Typography variant="h6" color="textSecondary">
+                {loading
+                  ? 'Loading categories...'
+                  : searchTerm
+                  ? `No categories found matching your search in ${languageTabs[tabValue].label}.`
+                  : 'No categories available.'}
+              </Typography>
+              {error ? (
+                <Button variant="outlined" onClick={handleRetry}>
+                  Try Again
+                </Button>
+              ) : (
+                !loading &&
+                !searchTerm && (
+                  <Typography variant="body2" color="textSecondary">
+                    Create your first category using the form above
+                  </Typography>
+                )
+              )}
+            </Stack>
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  </Table>
+</TableContainer>
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (

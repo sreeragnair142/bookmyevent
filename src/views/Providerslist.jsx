@@ -240,142 +240,253 @@ const ProvidersList = () => {
 
   // Handle Featured Toggle
   const handleFeaturedToggle = useCallback(
-    async (_id) => {
-      const toggleKey = `${_id}-featured`;
-      if (toggleLoading[toggleKey]) return;
+  async (_id) => {
+    const toggleKey = `${_id}-featured`;
+    if (toggleLoading[toggleKey]) return;
 
-      const provider = providers.find((p) => p._id === _id);
-      if (!provider) {
-        setNotification({
-          open: true,
-          message: 'Provider not found',
-          severity: 'error'
-        });
-        return;
+    const provider = providers.find((p) => p._id === _id);
+    if (!provider) {
+      setNotification({
+        open: true,
+        message: 'Provider not found',
+        severity: 'error'
+      });
+      return;
+    }
+
+    const originalValue = provider.featured;
+    const newValue = !originalValue;
+    
+    // Set loading state
+    setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
+    
+    // Optimistically update UI
+    setProviders((prev) => 
+      prev.map((p) => (p._id === _id ? { ...p, featured: newValue } : p))
+    );
+
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Authentication required - please login again');
       }
 
-      const newValue = !provider.featured;
-      setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
-      setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, featured: newValue } : p)));
+      const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-featured`;
+      
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        mode: 'cors'
+      });
 
-      try {
-        const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-featured`;
-        const options = getFetchOptions('PATCH');
-        const response = await fetch(endpoint, options);
-
-        if (!response.ok) {
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
           const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+          errorMessage = errorText || errorMessage;
         }
 
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Update failed');
+        if (response.status === 401) {
+          errorMessage = 'Authentication required - please login again';
+        } else if (response.status === 403) {
+          errorMessage = 'Access forbidden - insufficient permissions';
+        } else if (response.status === 404) {
+          errorMessage = 'Provider not found';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error - please try again later';
+        }
 
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update featured status');
+      }
+
+      // Update with server response
+      const serverValue = data.data?.provider?.isFeatured;
+      if (serverValue !== undefined) {
         setProviders((prev) =>
           prev.map((p) =>
-            p._id === _id
-              ? { ...p, featured: data.data.provider.isFeatured ?? p.featured }
-              : p
+            p._id === _id ? { ...p, featured: serverValue } : p
           )
         );
-
-        setNotification({
-          open: true,
-          message: `${provider.storeInfo} featured status updated successfully`,
-          severity: 'success'
-        });
-      } catch (error) {
-        console.error('❌ Featured toggle error:', {
-          message: error.message,
-          stack: error.stack
-        });
-        setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, featured: !newValue } : p)));
-
-        setNotification({
-          open: true,
-          message: `Error updating featured status: ${error.message}`,
-          severity: 'error'
-        });
-      } finally {
-        setToggleLoading((prev) => {
-          const newState = { ...prev };
-          delete newState[toggleKey];
-          return newState;
-        });
       }
-    },
-    [providers, API_BASE_URL, toggleLoading]
-  );
+
+      setNotification({
+        open: true,
+        message: `${provider.storeInfo} featured status updated successfully`,
+        severity: 'success'
+      });
+
+    } catch (error) {
+      console.error('Featured toggle error:', error);
+      
+      // Revert optimistic update
+      setProviders((prev) => 
+        prev.map((p) => (p._id === _id ? { ...p, featured: originalValue } : p))
+      );
+
+      let errorMessage = 'Failed to update featured status';
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'Network error - please check your connection and server status';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'CORS error - please check server configuration';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
+      setNotification({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
+    } finally {
+      setToggleLoading((prev) => {
+        const newState = { ...prev };
+        delete newState[toggleKey];
+        return newState;
+      });
+    }
+  },
+  [providers, API_BASE_URL, toggleLoading]
+);
 
   // Handle Status Toggle
-  const handleStatusToggle = useCallback(
-    async (_id) => {
-      const toggleKey = `${_id}-status`;
-      if (toggleLoading[toggleKey]) return;
+const handleStatusToggle = useCallback(
+  async (_id) => {
+    const toggleKey = `${_id}-status`;
+    if (toggleLoading[toggleKey]) return;
 
-      const provider = providers.find((p) => p._id === _id);
-      if (!provider) {
-        setNotification({
-          open: true,
-          message: 'Provider not found',
-          severity: 'error'
-        });
-        return;
+    const provider = providers.find((p) => p._id === _id);
+    if (!provider) {
+      setNotification({
+        open: true,
+        message: 'Provider not found',
+        severity: 'error'
+      });
+      return;
+    }
+
+    const originalValue = provider.status;
+    const newValue = !originalValue;
+    
+    // Set loading state
+    setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
+    
+    // Optimistically update UI
+    setProviders((prev) => 
+      prev.map((p) => (p._id === _id ? { ...p, status: newValue } : p))
+    );
+
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('Authentication required - please login again');
       }
 
-      const newValue = !provider.status;
-      setToggleLoading((prev) => ({ ...prev, [toggleKey]: true }));
-      setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, status: newValue } : p)));
+      const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-status`;
+      
+      const response = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        mode: 'cors'
+      });
 
-      try {
-        const endpoint = `${API_BASE_URL}/providers/${_id}/toggle-status`;
-        const options = getFetchOptions('PATCH');
-        const response = await fetch(endpoint, options);
-
-        if (!response.ok) {
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
           const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+          errorMessage = errorText || errorMessage;
         }
 
-        const data = await response.json();
-        if (!data.success) throw new Error(data.message || 'Update failed');
+        if (response.status === 401) {
+          errorMessage = 'Authentication required - please login again';
+        } else if (response.status === 403) {
+          errorMessage = 'Access forbidden - insufficient permissions';
+        } else if (response.status === 404) {
+          errorMessage = 'Provider not found';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error - please try again later';
+        }
 
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update status');
+      }
+
+      // Update with server response
+      const serverValue = data.data?.provider?.isActive;
+      if (serverValue !== undefined) {
         setProviders((prev) =>
           prev.map((p) =>
-            p._id === _id
-              ? { ...p, status: data.data.provider.isActive ?? p.status }
-              : p
+            p._id === _id ? { ...p, status: serverValue } : p
           )
         );
-
-        setNotification({
-          open: true,
-          message: `${provider.storeInfo} status updated successfully`,
-          severity: 'success'
-        });
-      } catch (error) {
-        console.error('❌ Status toggle error:', {
-          message: error.message,
-          stack: error.stack
-        });
-        setProviders((prev) => prev.map((p) => (p._id === _id ? { ...p, status: !newValue } : p)));
-
-        setNotification({
-          open: true,
-          message: `Error updating status: ${error.message}`,
-          severity: 'error'
-        });
-      } finally {
-        setToggleLoading((prev) => {
-          const newState = { ...prev };
-          delete newState[toggleKey];
-          return newState;
-        });
       }
-    },
-    [providers, API_BASE_URL, toggleLoading]
-  );
 
+      setNotification({
+        open: true,
+        message: `${provider.storeInfo} status updated successfully`,
+        severity: 'success'
+      });
+
+    } catch (error) {
+      console.error('Status toggle error:', error);
+      
+      // Revert optimistic update
+      setProviders((prev) => 
+        prev.map((p) => (p._id === _id ? { ...p, status: originalValue } : p))
+      );
+
+      let errorMessage = 'Failed to update status';
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'Network error - please check your connection and server status';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'CORS error - please check server configuration';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
+      setNotification({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
+    } finally {
+      setToggleLoading((prev) => {
+        const newState = { ...prev };
+        delete newState[toggleKey];
+        return newState;
+      });
+    }
+  },
+  [providers, API_BASE_URL, toggleLoading]
+);
   const handleDeleteConfirm = async () => {
     const storeName = providerToDelete.storeInfo;
     try {

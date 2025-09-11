@@ -54,7 +54,7 @@ export default function CategoryManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -65,7 +65,7 @@ export default function CategoryManagement() {
     metaTitle: '',
     metaDescription: ''
   });
-  
+
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,23 +107,23 @@ export default function CategoryManagement() {
 
   // Auth helper functions
   const getAuthToken = () => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    console.log("Retrieved token:", token ? "Token exists" : "No token found");
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    console.log('Retrieved token:', token ? 'Token exists' : 'No token found');
     return token;
   };
 
   const getUserRole = () => {
-    const user = localStorage.getItem("user") || sessionStorage.getItem("user");
+    const user = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (!user) {
-      console.log("No user data found in storage");
+      console.log('No user data found in storage');
       return null;
     }
     try {
       const parsedUser = JSON.parse(user);
-      console.log("User role:", parsedUser.role);
+      console.log('User role:', parsedUser.role);
       return parsedUser.role;
     } catch (e) {
-      console.error("Error parsing user data:", e);
+      console.error('Error parsing user data:', e);
       return null;
     }
   };
@@ -132,7 +132,7 @@ export default function CategoryManagement() {
 
   // Handle form data change
   const handleFormDataChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value
     }));
@@ -142,26 +142,26 @@ export default function CategoryManagement() {
   const fetchCategories = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
-      setError("You are not authenticated. Please log in.");
+      setError('You are not authenticated. Please log in.');
       setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
-    
+
     try {
       const url = `${API_BASE_URL}/auditoriumcategories?page=${pagination.currentPage}&limit=${pagination.itemsPerPage}&search=${encodeURIComponent(searchTerm)}`;
-      
+
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json'
         }
       });
-      
+
       if (response.status === 401) {
-        setError("Session expired. Please log in again.");
+        setError('Session expired. Please log in again.');
         return;
       }
 
@@ -174,16 +174,16 @@ export default function CategoryManagement() {
         const text = await response.text();
         throw new Error(`HTTP error! status: ${response.status}: ${text}`);
       }
-      
+
       const data = await response.json();
-      
+
       // Extract categories from the response
       const categories = data.data?.categories || data.categories || [];
-      
+
       // Process categories for display
       const baseURL = API_BASE_URL.replace('/api', ''); // http://localhost:5000
-      
-      const formattedCategories = categories.map(cat => ({
+
+      const formattedCategories = categories.map((cat) => ({
         id: cat._id,
         names: {
           default: cat.name || '',
@@ -193,9 +193,9 @@ export default function CategoryManagement() {
         status: cat.isActive !== undefined ? cat.isActive : true,
         image: cat.image ? `${baseURL}/${cat.image}` : ''
       }));
-      
+
       setCategories(formattedCategories);
-      
+
       // Handle pagination
       if (data.pagination) {
         setPagination({
@@ -205,7 +205,6 @@ export default function CategoryManagement() {
           itemsPerPage: data.pagination.itemsPerPage
         });
       }
-      
     } catch (error) {
       console.error('Error fetching categories:', error);
       setError(error.message);
@@ -219,24 +218,24 @@ export default function CategoryManagement() {
   useEffect(() => {
     const role = getUserRole();
     const token = getAuthToken();
-    console.log("Initial check - Token:", token ? "Exists" : "Missing", "Role:", role);
+    console.log('Initial check - Token:', token ? 'Exists' : 'Missing', 'Role:', role);
 
     if (!token) {
-      console.log("No token found - showing error but staying on page");
-      setError("You are not authenticated. Please log in.");
+      console.log('No token found - showing error but staying on page');
+      setError('You are not authenticated. Please log in.');
       setLoading(false);
       return;
     }
 
     // Allow admin, manager, and superadmin roles
     if (!['admin', 'manager', 'superadmin'].includes(role)) {
-      console.log("Insufficient permissions - showing error but staying on page");
-      setError("Access denied. Admin, Manager, or Superadmin role required.");
+      console.log('Insufficient permissions - showing error but staying on page');
+      setError('Access denied. Admin, Manager, or Superadmin role required.');
       setLoading(false);
       return;
     }
 
-    console.log("Proceeding to fetch categories - role check passed");
+    console.log('Proceeding to fetch categories - role check passed');
     fetchCategories();
   }, []);
 
@@ -274,7 +273,7 @@ export default function CategoryManagement() {
   const handleAdd = async () => {
     const token = getAuthToken();
     if (!token) {
-      setError("You are not authenticated. Please log in.");
+      setError('You are not authenticated. Please log in.');
       return;
     }
 
@@ -306,17 +305,17 @@ export default function CategoryManagement() {
       if (formData.metaDescription.trim()) {
         formDataToSend.append('metaDescription', formData.metaDescription.trim());
       }
-      
+
       // Use the correct field name as per backend configuration
       formDataToSend.append('auditoriumCategoryImage', uploadedImage);
 
       const response = await fetch(`${API_BASE_URL}/auditoriumcategories`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
           // Content-Type is not set for FormData; browser sets it with boundary
         },
-        body: formDataToSend,
+        body: formDataToSend
       });
 
       if (!response.ok) {
@@ -330,7 +329,7 @@ export default function CategoryManagement() {
 
         // Handle specific error cases
         if (response.status === 401) {
-          setError("Session expired. Please log in again.");
+          setError('Session expired. Please log in again.');
           return;
         }
         if (response.status === 403) {
@@ -389,7 +388,7 @@ export default function CategoryManagement() {
 
   // Handle delete confirmation
   const handleDeleteClick = (id) => {
-    const category = categories.find(c => c.id === id);
+    const category = categories.find((c) => c.id === id);
     setDeleteDialog({
       open: true,
       categoryId: id,
@@ -401,7 +400,7 @@ export default function CategoryManagement() {
   const handleDeleteConfirm = async () => {
     const token = getAuthToken();
     if (!token) {
-      setError("You are not authenticated. Please log in.");
+      setError('You are not authenticated. Please log in.');
       return;
     }
 
@@ -410,8 +409,8 @@ export default function CategoryManagement() {
       const response = await fetch(`${API_BASE_URL}/auditoriumcategories/${deleteDialog.categoryId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
@@ -423,7 +422,7 @@ export default function CategoryManagement() {
           errorData = { message: text || 'Unknown error' };
         }
         if (response.status === 401) {
-          setError("Session expired. Please log in again.");
+          setError('Session expired. Please log in again.');
           return;
         }
         if (response.status === 403) {
@@ -448,7 +447,7 @@ export default function CategoryManagement() {
   const handleStatusToggle = async (id) => {
     const token = getAuthToken();
     if (!token) {
-      setError("You are not authenticated. Please log in.");
+      setError('You are not authenticated. Please log in.');
       return;
     }
 
@@ -457,9 +456,9 @@ export default function CategoryManagement() {
       const response = await fetch(`${API_BASE_URL}/auditoriumcategories/${id}/toggle-status`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
+        }
       });
 
       if (!response.ok) {
@@ -471,7 +470,7 @@ export default function CategoryManagement() {
           errorData = { message: text || 'Unknown error' };
         }
         if (response.status === 401) {
-          setError("Session expired. Please log in again.");
+          setError('Session expired. Please log in again.');
           return;
         }
         if (response.status === 403) {
@@ -483,10 +482,7 @@ export default function CategoryManagement() {
 
       const data = await response.json();
       const newStatus = data.data.category.isActive;
-      showNotification(
-        `Category "${data.data.category.name}" ${newStatus ? 'activated' : 'deactivated'}`,
-        'info'
-      );
+      showNotification(`Category "${data.data.category.name}" ${newStatus ? 'activated' : 'deactivated'}`, 'info');
       fetchCategories();
     } catch (error) {
       console.error('Error toggling category status:', error);
@@ -503,16 +499,16 @@ export default function CategoryManagement() {
 
   // Handle notification close
   const handleNotificationClose = () => {
-    setNotification(prev => ({ ...prev, open: false }));
+    setNotification((prev) => ({ ...prev, open: false }));
   };
 
   // Navigation helpers
   const handleLoginRedirect = () => {
-    navigate("/login");
+    navigate('/login');
   };
 
   const handleDashboardRedirect = () => {
-    navigate("/dashboard");
+    navigate('/dashboard');
   };
 
   const handleRetry = () => {
@@ -523,7 +519,7 @@ export default function CategoryManagement() {
   const getCurrentLanguageKey = () => languageTabs[tabValue].key;
 
   // Filter categories based on search term
-  const filteredCategories = categories.filter(category => {
+  const filteredCategories = categories.filter((category) => {
     const currentLang = getCurrentLanguageKey();
     return category.names[currentLang].toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -541,9 +537,9 @@ export default function CategoryManagement() {
   const exportToCSV = () => {
     const currentLang = getCurrentLanguageKey();
     const currentLangLabel = languageTabs[tabValue].label;
-    
+
     const headers = ['SI', 'ID', `Name (${currentLangLabel})`, 'Status'];
-    
+
     const csvData = filteredCategories.map((category, index) => [
       index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage,
       category.id,
@@ -552,8 +548,8 @@ export default function CategoryManagement() {
     ]);
 
     let csvContent = headers.join(',') + '\n';
-    csvData.forEach(row => {
-      csvContent += row.map(field => `"${field}"`).join(',') + '\n';
+    csvData.forEach((row) => {
+      csvContent += row.map((field) => `"${field}"`).join(',') + '\n';
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -574,9 +570,9 @@ export default function CategoryManagement() {
   const exportToExcel = () => {
     const currentLang = getCurrentLanguageKey();
     const currentLangLabel = languageTabs[tabValue].label;
-    
+
     const headers = ['SI', 'ID', `Name (${currentLangLabel})`, 'Status'];
-    
+
     const excelData = filteredCategories.map((category, index) => [
       index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage,
       category.id,
@@ -585,7 +581,7 @@ export default function CategoryManagement() {
     ]);
 
     let excelContent = headers.join('\t') + '\n';
-    excelData.forEach(row => {
+    excelData.forEach((row) => {
       excelContent += row.join('\t') + '\n';
     });
 
@@ -617,29 +613,24 @@ export default function CategoryManagement() {
 
   return (
     <Box sx={{ width: '100%', minHeight: '100vh', backgroundColor: '#f5f5f5', p: { xs: 2, sm: 3 } }}>
-      
       {/* Error/Success Messages with manual redirect buttons */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={null}
-        onClose={() => setError(null)}
-      >
-        <Alert 
-          severity="error" 
+      <Snackbar open={!!error} autoHideDuration={null} onClose={() => setError(null)}>
+        <Alert
+          severity="error"
           onClose={() => setError(null)}
           action={
             <Stack direction="row" spacing={1}>
-              {error && error.includes("not authenticated") && (
+              {error && error.includes('not authenticated') && (
                 <Button color="inherit" size="small" onClick={handleLoginRedirect}>
                   Go to Login
                 </Button>
               )}
-              {error && error.includes("Access denied") && (
+              {error && error.includes('Access denied') && (
                 <Button color="inherit" size="small" onClick={handleDashboardRedirect}>
                   Go to Dashboard
                 </Button>
               )}
-              {error && !error.includes("not authenticated") && !error.includes("Access denied") && (
+              {error && !error.includes('not authenticated') && !error.includes('Access denied') && (
                 <Button color="inherit" size="small" onClick={handleRetry}>
                   Retry
                 </Button>
@@ -655,7 +646,6 @@ export default function CategoryManagement() {
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
         <Card sx={{ width: '100%', maxWidth: '1400px', boxShadow: 3, borderRadius: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
-            
             {/* Tabs */}
             <Tabs
               value={tabValue}
@@ -695,19 +685,12 @@ export default function CategoryManagement() {
 
             {/* Upload Image */}
             <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-              Image <span style={{ color: '#f44336' }}>*</span>{' '}
-              <span style={{ color: '#e91e63', fontSize: '0.875rem' }}>(Ratio 3:2)</span>
+              Image <span style={{ color: '#f44336' }}>*</span> <span style={{ color: '#e91e63', fontSize: '0.875rem' }}>(Ratio 3:2)</span>
             </Typography>
-            
+
             <Box sx={{ display: 'flex', gap: 3, mb: 4, flexDirection: { xs: 'column', sm: 'row' } }}>
               <Box>
-                <input
-                  id="image-upload-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                />
+                <input id="image-upload-input" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                 <label htmlFor="image-upload-input">
                   <Button
                     component="span"
@@ -791,8 +774,11 @@ export default function CategoryManagement() {
                 variant="outlined"
                 onClick={handleReset}
                 sx={{
-                  px: 4, py: 1.5, textTransform: 'none',
-                  borderColor: '#e0e0e0', color: '#666',
+                  px: 4,
+                  py: 1.5,
+                  textTransform: 'none',
+                  borderColor: '#e0e0e0',
+                  color: '#666',
                   '&:hover': { borderColor: '#bdbdbd', backgroundColor: '#f5f5f5' }
                 }}
                 disabled={loading}
@@ -804,8 +790,10 @@ export default function CategoryManagement() {
                 onClick={handleAdd}
                 disabled={!formData.name.trim() || !uploadedImage || loading}
                 sx={{
-                  px: 4, py: 1.5,
-                  backgroundColor: '#00695c', textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                  backgroundColor: '#00695c',
+                  textTransform: 'none',
                   '&:hover': { backgroundColor: '#004d40' },
                   '&:disabled': { backgroundColor: '#e0e0e0', color: '#999' }
                 }}
@@ -821,20 +809,21 @@ export default function CategoryManagement() {
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <Card sx={{ width: '100%', maxWidth: '1400px', boxShadow: 3, borderRadius: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            
             {/* Header */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h6" fontWeight={600}>Category List</Typography>
-                <Chip 
-                  label={filteredCategories.length} 
-                  size="small" 
-                  sx={{ backgroundColor: '#e3f2fd', color: '#2196f3', fontWeight: 600 }} 
+                <Typography variant="h6" fontWeight={600}>
+                  Category List
+                </Typography>
+                <Chip
+                  label={filteredCategories.length}
+                  size="small"
+                  sx={{ backgroundColor: '#e3f2fd', color: '#2196f3', fontWeight: 600 }}
                 />
-                <Chip 
+                <Chip
                   label={`Language: ${languageTabs[tabValue].label}`}
-                  size="small" 
-                  sx={{ backgroundColor: '#e8f5e8', color: '#2e7d32', fontWeight: 500 }} 
+                  size="small"
+                  sx={{ backgroundColor: '#e8f5e8', color: '#2e7d32', fontWeight: 500 }}
                 />
               </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
@@ -873,7 +862,7 @@ export default function CategoryManagement() {
                 >
                   Export
                 </Button>
-                
+
                 {/* Export Menu */}
                 <Menu
                   anchorEl={exportMenuAnchor}
@@ -881,11 +870,11 @@ export default function CategoryManagement() {
                   onClose={handleExportMenuClose}
                   anchorOrigin={{
                     vertical: 'bottom',
-                    horizontal: 'right',
+                    horizontal: 'right'
                   }}
                   transformOrigin={{
                     vertical: 'top',
-                    horizontal: 'right',
+                    horizontal: 'right'
                   }}
                   sx={{
                     '& .MuiPaper-root': {
@@ -900,20 +889,14 @@ export default function CategoryManagement() {
                     <ListItemIcon>
                       <ExcelIcon sx={{ color: '#1976d2' }} />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="Export to Excel"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                    />
+                    <ListItemText primary="Export to Excel" primaryTypographyProps={{ fontWeight: 500 }} />
                   </MenuItem>
                   <Divider />
                   <MenuItem onClick={exportToCSV} sx={{ py: 1.5, px: 2 }}>
                     <ListItemIcon>
                       <CsvIcon sx={{ color: '#2e7d32' }} />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="Export to CSV"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                    />
+                    <ListItemText primary="Export to CSV" primaryTypographyProps={{ fontWeight: 500 }} />
                   </MenuItem>
                 </Menu>
               </Box>
@@ -927,128 +910,164 @@ export default function CategoryManagement() {
             )}
 
             {/* Table */}
-            <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead sx={{ backgroundColor: '#fafafa' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>SI</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Id</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
-                    <TableCell sx={{
-                      fontWeight: 600,
-                      color: '#666',
-                      direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
-                    }}>
-                      Name ({languageTabs[tabValue].label})
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Status</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#666' }}>Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredCategories.length > 0 ? (
-                    filteredCategories.map((category, index) => {
-                      const currentLang = getCurrentLanguageKey();
-                      return (
-                        <TableRow key={category.id} sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}>
-                          <TableCell>{index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage}</TableCell>
-                          <TableCell>{category.id}</TableCell>
-                          <TableCell>
-                            {category.image ? (
-                              <Box
-                                sx={{
-                                  width: 50,
-                                  height: 35,
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                  border: '1px solid #e0e0e0'
-                                }}
-                              >
-                                <img
-                                  src={category.image}
-                                  alt={category.names[currentLang]}
-                                  style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                />
-                              </Box>
-                            ) : (
-                              <Box
-                                sx={{
-                                  width: 50,
-                                  height: 35,
-                                  borderRadius: 1,
-                                  backgroundColor: '#f5f5f5',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  border: '1px solid #e0e0e0'
-                                }}
-                              >
-                                <Typography variant="caption" color="text.secondary">
-                                  No Image
-                                </Typography>
-                              </Box>
-                            )}
-                          </TableCell>
-                          <TableCell sx={{
-                            fontWeight: 500,
-                            maxWidth: 200,
-                            direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
-                          }}>
-                            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                              {category.names[currentLang]}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={category.status}
-                              onChange={() => handleStatusToggle(category.id)}
-                              sx={{
-                                '& .MuiSwitch-switchBase.Mui-checked': { color: '#2196f3' },
-                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#2196f3' }
-                              }}
-                              disabled={loading}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <IconButton size="small" onClick={() => handleEdit(category.id)} sx={{ color: '#2196f3' }} disabled={loading}>
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" onClick={() => handleDeleteClick(category.id)} sx={{ color: '#f44336' }} disabled={loading}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: '#999' }}>
-                        <Stack spacing={2} alignItems="center">
-                          <Typography variant="h6" color="textSecondary">
-                            {loading ? 'Loading categories...' : (searchTerm ? `No categories found matching your search in ${languageTabs[tabValue].label}.` : 'No categories available.')}
-                          </Typography>
-                          {error ? (
-                            <Button variant="outlined" onClick={handleRetry}>
-                              Try Again
-                            </Button>
-                          ) : !loading && !searchTerm && (
-                            <Typography variant="body2" color="textSecondary">
-                              Create your first category using the form above
-                            </Typography>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+           <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+  <Table size="small">
+    <TableHead sx={{ backgroundColor: '#fafafa' }}>
+      <TableRow>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>SI</TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Image</TableCell>
+        <TableCell
+          sx={{
+            fontWeight: 600,
+            color: '#666',
+            direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
+          }}
+        >
+          Name ({languageTabs[tabValue].label})
+        </TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Status</TableCell>
+        <TableCell sx={{ fontWeight: 600, color: '#666' }}>Action</TableCell>
+      </TableRow>
+    </TableHead>
+
+    <TableBody>
+      {filteredCategories.length > 0 ? (
+        filteredCategories.map((category, index) => {
+          const currentLang = getCurrentLanguageKey();
+          return (
+            <TableRow
+              key={category.id}
+              sx={{ '&:hover': { backgroundColor: '#f9f9f9' } }}
+            >
+              {/* SI Column */}
+              <TableCell>
+                {index + 1 + (pagination.currentPage - 1) * pagination.itemsPerPage}
+              </TableCell>
+
+              {/* Image Column */}
+              <TableCell>
+                {category.image ? (
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 35,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      border: '1px solid #e0e0e0'
+                    }}
+                  >
+                    <img
+                      src={category.image}
+                      alt={category.names[currentLang]}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 35,
+                      borderRadius: 1,
+                      backgroundColor: '#f5f5f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid #e0e0e0'
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      No Image
+                    </Typography>
+                  </Box>
+                )}
+              </TableCell>
+
+              {/* Name Column */}
+              <TableCell
+                sx={{
+                  fontWeight: 500,
+                  maxWidth: 200,
+                  direction: languageTabs[tabValue].key === 'arabic' ? 'rtl' : 'ltr'
+                }}
+              >
+                <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                  {category.names[currentLang]}
+                </Typography>
+              </TableCell>
+
+              {/* Status Column */}
+              <TableCell>
+                <Switch
+                  checked={category.status}
+                  onChange={() => handleStatusToggle(category.id)}
+                  sx={{
+                    '& .MuiSwitch-switchBase.Mui-checked': { color: '#2196f3' },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: '#2196f3'
+                    }
+                  }}
+                  disabled={loading}
+                />
+              </TableCell>
+
+              {/* Action Column */}
+              <TableCell>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEdit(category.id)}
+                    sx={{ color: '#2196f3' }}
+                    disabled={loading}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteClick(category.id)}
+                    sx={{ color: '#f44336' }}
+                    disabled={loading}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </TableCell>
+            </TableRow>
+          );
+        })
+      ) : (
+        <TableRow>
+          <TableCell colSpan={5} sx={{ textAlign: 'center', py: 4, color: '#999' }}>
+            <Stack spacing={2} alignItems="center">
+              <Typography variant="h6" color="textSecondary">
+                {loading
+                  ? 'Loading categories...'
+                  : searchTerm
+                  ? `No categories found matching your search in ${languageTabs[tabValue].label}.`
+                  : 'No categories available.'}
+              </Typography>
+              {error ? (
+                <Button variant="outlined" onClick={handleRetry}>
+                  Try Again
+                </Button>
+              ) : (
+                !loading &&
+                !searchTerm && (
+                  <Typography variant="body2" color="textSecondary">
+                    Create your first category using the form above
+                  </Typography>
+                )
+              )}
+            </Stack>
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  </Table>
+</TableContainer>
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
@@ -1056,18 +1075,18 @@ export default function CategoryManagement() {
                 <Button
                   variant="outlined"
                   disabled={pagination.currentPage === 1 || loading}
-                  onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage - 1 }))}
+                  onClick={() => setPagination((prev) => ({ ...prev, currentPage: prev.currentPage - 1 }))}
                 >
                   Previous
                 </Button>
                 <Typography variant="body2">
                   Page {pagination.currentPage} of {pagination.totalPages}
-                  {pagination.totalItems ? ` (${pagination.totalItems} total)` : ""}
+                  {pagination.totalItems ? ` (${pagination.totalItems} total)` : ''}
                 </Typography>
                 <Button
                   variant="outlined"
                   disabled={pagination.currentPage === pagination.totalPages || loading}
-                  onClick={() => setPagination(prev => ({ ...prev, currentPage: prev.currentPage + 1 }))}
+                  onClick={() => setPagination((prev) => ({ ...prev, currentPage: prev.currentPage + 1 }))}
                 >
                   Next
                 </Button>
@@ -1084,16 +1103,12 @@ export default function CategoryManagement() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ fontWeight: 600 }}>
-          Confirm Delete
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete the category "{deleteDialog.categoryName}"? This action cannot be undone.
-          </Typography>
+          <Typography>Are you sure you want to delete the category "{deleteDialog.categoryName}"? This action cannot be undone.</Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3, gap: 1 }}>
-          <Button 
+          <Button
             onClick={() => setDeleteDialog({ open: false, categoryId: null, categoryName: '' })}
             variant="outlined"
             sx={{ textTransform: 'none' }}
@@ -1101,13 +1116,7 @@ export default function CategoryManagement() {
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleDeleteConfirm}
-            variant="contained"
-            color="error"
-            sx={{ textTransform: 'none' }}
-            disabled={loading}
-          >
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error" sx={{ textTransform: 'none' }} disabled={loading}>
             {loading ? <CircularProgress size={20} color="inherit" /> : 'Delete'}
           </Button>
         </DialogActions>
@@ -1120,12 +1129,7 @@ export default function CategoryManagement() {
         onClose={handleNotificationClose}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleNotificationClose} 
-          severity={notification.severity}
-          variant="filled"
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleNotificationClose} severity={notification.severity} variant="filled" sx={{ width: '100%' }}>
           {notification.message}
         </Alert>
       </Snackbar>

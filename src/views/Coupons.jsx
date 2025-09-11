@@ -22,7 +22,15 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
+  IconButton,
+  Tooltip,
+  Chip,
 } from "@mui/material";
+import { 
+  Edit as EditIcon, 
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+} from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 
@@ -32,7 +40,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 const Coupons = () => {
   const [coupons, setCoupons] = useState([]);
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState("");
@@ -54,6 +66,7 @@ const Coupons = () => {
     minPurchase: "",
     discount: "",
     maxDiscount: "",
+    isActive: true,
   });
 
   const theme = useTheme();
@@ -219,10 +232,43 @@ const Coupons = () => {
     fetchCoupons(page, search);
   }, [page, search]);
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setEditMode(false);
+    setSelectedCoupon(null);
+    setOpen(true);
+  };
+
+  const handleEdit = (coupon) => {
+    setEditMode(true);
+    setSelectedCoupon(coupon);
+    
+    // Format dates for input fields
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    };
+
+    setFormData({
+      title: coupon.title || "",
+      type: coupon.type || "",
+      code: coupon.code || "",
+      totalUses: coupon.totalUses?.toString() || "",
+      startDate: formatDate(coupon.startDate),
+      expireDate: formatDate(coupon.expireDate),
+      discountType: coupon.discountType || "",
+      minPurchase: coupon.minPurchase?.toString() || "",
+      discount: coupon.discount?.toString() || "",
+      maxDiscount: coupon.maxDiscount?.toString() || "",
+      isActive: coupon.isActive !== undefined ? coupon.isActive : true,
+    });
+    setOpen(true);
+  };
 
   const handleClose = () => {
     setOpen(false);
+    setEditMode(false);
+    setSelectedCoupon(null);
     setFormData({
       title: "",
       type: "",
@@ -234,6 +280,7 @@ const Coupons = () => {
       minPurchase: "",
       discount: "",
       maxDiscount: "",
+      isActive: true,
     });
   };
 
@@ -253,8 +300,14 @@ const Coupons = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/coupons`, {
-        method: "POST",
+      const url = editMode 
+        ? `${API_BASE_URL}/coupons/${selectedCoupon._id || selectedCoupon.id}`
+        : `${API_BASE_URL}/coupons`;
+      
+      const method = editMode ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -262,16 +315,15 @@ const Coupons = () => {
         body: JSON.stringify({
           ...formData,
           code: formData.code.toUpperCase().trim(),
-          totalUses: parseInt(formData.totalUses) || 1,
+          totalUses: formData.totalUses ? parseInt(formData.totalUses) : null,
           minPurchase: parseFloat(formData.minPurchase) || 0,
           discount: parseFloat(formData.discount) || 0,
-          maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : undefined,
-          isActive: true,
+          maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : null,
         }),
       });
 
       const text = await response.text();
-      console.log("Save coupon response status:", response.status, "Response text:", text);
+      console.log(`${editMode ? 'Update' : 'Save'} coupon response status:`, response.status, "Response text:", text);
       
       let data;
       try {
@@ -289,33 +341,120 @@ const Coupons = () => {
       }
 
       if (data.success === false) {
-        throw new Error(data.message || "Failed to create coupon");
+        throw new Error(data.message || `Failed to ${editMode ? 'update' : 'create'} coupon`);
       }
 
       if (!response.ok) {
         throw new Error(data.message || `Server error: ${response.status}`);
       }
 
-      // Handle successful creation
-      const newCoupon = data.data?.coupon || data.coupon || data;
-      if (newCoupon && newCoupon._id) {
-        setCoupons(prev => [newCoupon, ...prev]);
-        setSuccess("Coupon created successfully!");
-        handleClose();
-        // Optionally refresh the list to get updated pagination
-        setTimeout(() => fetchCoupons(page, search), 1000);
+      // Handle successful creation/update
+      const updatedCoupon = data.data?.coupon || data.coupon || data;
+      
+      if (editMode) {
+        // Update existing coupon in the list
+        setCoupons(prev => prev.map(coupon => 
+          (coupon._id || coupon.id) === (selectedCoupon._id || selectedCoupon.id) 
+            ? { ...coupon, ...updatedCoupon } 
+            : coupon
+        ));
+        setSuccess("Coupon updated successfully!");
       } else {
+        // Add new coupon to the list
+        if (updatedCoupon && (updatedCoupon._id || updatedCoupon.id)) {
+          setCoupons(prev => [updatedCoupon, ...prev]);
+        }
         setSuccess("Coupon created successfully!");
-        handleClose();
-        // Refresh the list
-        fetchCoupons(page, search);
       }
+      
+      handleClose();
+      // Optionally refresh the list to get updated pagination
+      setTimeout(() => fetchCoupons(page, search), 1000);
     } catch (err) {
       console.error("Save error:", err.message);
-      setError(err.message || "Failed to create coupon. Please try again.");
+      setError(err.message || `Failed to ${editMode ? 'update' : 'create'} coupon. Please try again.`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteClick = (coupon) => {
+    setSelectedCoupon(coupon);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setError("You are not authenticated. Please log in.");
+      return;
+    }
+
+    if (!selectedCoupon) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/coupons/${selectedCoupon._id || selectedCoupon.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const text = await response.text();
+      console.log("Delete coupon response status:", response.status, "Response text:", text);
+
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        // Handle cases where delete might return empty response
+        data = {};
+      }
+
+      if (response.status === 401) {
+        setError("Session expired. Please log in again.");
+        return;
+      }
+
+      if (response.status === 404) {
+        setError("Coupon not found. It may have already been deleted.");
+        // Remove from local state anyway
+        setCoupons(prev => prev.filter(coupon => 
+          (coupon._id || coupon.id) !== (selectedCoupon._id || selectedCoupon.id)
+        ));
+        setDeleteDialogOpen(false);
+        setSelectedCoupon(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || `Server error: ${response.status}`);
+      }
+
+      // Remove coupon from local state
+      setCoupons(prev => prev.filter(coupon => 
+        (coupon._id || coupon.id) !== (selectedCoupon._id || selectedCoupon.id)
+      ));
+      
+      setSuccess("Coupon deleted successfully!");
+      setDeleteDialogOpen(false);
+      setSelectedCoupon(null);
+      
+      // Refresh the list to get updated pagination
+      setTimeout(() => fetchCoupons(page, search), 1000);
+    } catch (err) {
+      console.error("Delete error:", err.message);
+      setError(err.message || "Failed to delete coupon. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setSelectedCoupon(null);
   };
 
   const handleChange = (e) => {
@@ -342,6 +481,23 @@ const Coupons = () => {
 
   const handleDashboardRedirect = () => {
     navigate("/dashboard");
+  };
+
+  const isExpired = (expireDate) => {
+    if (!expireDate) return false;
+    return new Date(expireDate) < new Date();
+  };
+
+  const getStatusColor = (coupon) => {
+    if (!coupon.isActive) return "error";
+    if (isExpired(coupon.expireDate)) return "warning";
+    return "success";
+  };
+
+  const getStatusText = (coupon) => {
+    if (!coupon.isActive) return "Inactive";
+    if (isExpired(coupon.expireDate)) return "Expired";
+    return "Active";
   };
 
   // Show loading state during initial fetch
@@ -413,7 +569,9 @@ const Coupons = () => {
         fullWidth
         fullScreen={fullScreen}
       >
-        <DialogTitle>Add New Coupon</DialogTitle>
+        <DialogTitle>
+          {editMode ? `Edit Coupon: ${selectedCoupon?.code}` : "Add New Coupon"}
+        </DialogTitle>
         <DialogContent dividers>
           <TextField
             fullWidth
@@ -450,6 +608,7 @@ const Coupons = () => {
             required
             error={!formData.code && formData.code !== ""}
             helperText="Coupon code will be automatically converted to uppercase"
+            disabled={editMode} // Prevent code changes when editing
           />
           <TextField
             fullWidth
@@ -527,13 +686,72 @@ const Coupons = () => {
             inputProps={{ min: 0, step: 0.01 }}
             helperText="Only applicable for percentage discounts"
           />
+          {editMode && (
+            <Select
+              fullWidth
+              name="isActive"
+              value={formData.isActive}
+              onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value }))}
+              sx={{ mb: 2 }}
+            >
+              <MenuItem value={true}>Active</MenuItem>
+              <MenuItem value={false}>Inactive</MenuItem>
+            </Select>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
           <Button variant="contained" onClick={handleSave} disabled={loading}>
-            {loading ? <CircularProgress size={20} /> : "Create Coupon"}
+            {loading ? <CircularProgress size={20} /> : (editMode ? "Update Coupon" : "Create Coupon")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Coupon</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Are you sure you want to delete this coupon?
+          </Typography>
+          {selectedCoupon && (
+            <Box mt={2} p={2} bgcolor="grey.100" borderRadius={1}>
+              <Typography variant="subtitle2" color="primary">
+                <strong>Code:</strong> {selectedCoupon.code}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Title:</strong> {selectedCoupon.title}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Type:</strong> {selectedCoupon.type}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Discount:</strong> {selectedCoupon.discountType === "percentage" ? `${selectedCoupon.discount}%` : `$${selectedCoupon.discount}`}
+              </Typography>
+            </Box>
+          )}
+          <Typography variant="body2" color="error" mt={2}>
+            This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={handleDeleteConfirm} 
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? <CircularProgress size={20} /> : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -585,12 +803,13 @@ const Coupons = () => {
                 <TableCell>Start Date</TableCell>
                 <TableCell>Expire Date</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {coupons.length === 0 && !loading ? (
                 <TableRow>
-                  <TableCell colSpan={13} align="center">
+                  <TableCell colSpan={14} align="center">
                     <Stack spacing={2} alignItems="center" py={4}>
                       <Typography variant="h6" color="textSecondary">
                         No coupons found
@@ -635,13 +854,36 @@ const Coupons = () => {
                       {coupon.expireDate ? new Date(coupon.expireDate).toLocaleDateString() : "-"}
                     </TableCell>
                     <TableCell>
-                      <Typography
-                        variant="body2"
-                        color={coupon.isActive ? "success.main" : "error.main"}
-                        sx={{ fontWeight: "medium" }}
-                      >
-                        {coupon.isActive ? "Active" : "Inactive"}
-                      </Typography>
+                      <Chip
+                        label={getStatusText(coupon)}
+                        color={getStatusColor(coupon)}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={0.5} justifyContent="center">
+                        <Tooltip title="Edit Coupon">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleEdit(coupon)}
+                            disabled={loading}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete Coupon">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteClick(coupon)}
+                            disabled={loading || deleteLoading}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))
