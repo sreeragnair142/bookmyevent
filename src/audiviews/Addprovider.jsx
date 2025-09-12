@@ -199,6 +199,8 @@ function AddAuditorium() {
     
     if (formData.password && formData.password !== formData.confirmPassword) {
       errors.push('Passwords do not match');
+    } else if (formData.password && formData.password.length < 6) {
+      errors.push('Password must be at least 6 characters long');
     }
     
     if (formData.latitude && isNaN(parseFloat(formData.latitude))) {

@@ -146,7 +146,10 @@ const AuditoriumsList = () => {
                 ...updatedAuditorium,
                 storeInfo: updatedAuditorium.storeName,
                 ownerInfo: `${updatedAuditorium.ownerFirstName || ''} ${updatedAuditorium.ownerLastName || ''} (${updatedAuditorium.ownerPhone || 'N/A'})`,
-                zone: zones.find((zone) => zone._id === updatedAuditorium.zone)?.name || 'N/A'
+                zone: zones.find((zone) => zone._id === updatedAuditorium.zone)?.name || 'N/A',
+                ownerEmail: updatedAuditorium.ownerEmail || '',
+                password: updatedAuditorium.password || '********', // Mask password for security
+                confirmPassword: updatedAuditorium.confirmPassword || '********' // Mask confirm password
               }
             : auditorium
         )
@@ -216,6 +219,8 @@ const AuditoriumsList = () => {
           ownerLastName: auditorium.ownerLastName || '',
           ownerPhone: auditorium.ownerPhone || '',
           ownerEmail: auditorium.ownerEmail || '',
+          password: '********', // Mask password for security
+          confirmPassword: '********', // Mask confirm password
           businessTIN: auditorium.businessTIN || '',
           tinExpireDate: auditorium.tinExpireDate || '',
           logo: auditorium.logo
@@ -437,14 +442,17 @@ const AuditoriumsList = () => {
   });
 
   const exportToCSV = () => {
-    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status'];
+    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status', 'Email', 'Password', 'Confirm Password'];
     const csvData = filteredAuditoriums.map((auditorium) => [
       auditorium.id,
       `"${auditorium.storeInfo}"`,
       `"${auditorium.ownerInfo}"`,
       `"${auditorium.zone}"`,
       auditorium.featured ? 'Yes' : 'No',
-      auditorium.status ? 'Active' : 'Inactive'
+      auditorium.status ? 'Active' : 'Inactive',
+      `"${auditorium.ownerEmail}"`,
+      `"${auditorium.password}"`,
+      `"${auditorium.confirmPassword}"`
     ]);
 
     const csvContent = [headers.join(','), ...csvData.map((row) => row.join(','))].join('\n');
@@ -468,7 +476,7 @@ const AuditoriumsList = () => {
   };
 
   const exportToExcel = () => {
-    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status'];
+    const headers = ['Sl', 'Auditorium Name', 'Owner Information', 'Zone', 'Featured', 'Status', 'Email', 'Password', 'Confirm Password'];
     let excelContent = `
       <table border="1">
         <thead>
@@ -485,6 +493,9 @@ const AuditoriumsList = () => {
               <td>${auditorium.zone}</td>
               <td>${auditorium.featured ? 'Yes' : 'No'}</td>
               <td>${auditorium.status ? 'Active' : 'Inactive'}</td>
+              <td>${auditorium.ownerEmail}</td>
+              <td>${auditorium.password}</td>
+              <td>${auditorium.confirmPassword}</td>
             </tr>
           `
             )
@@ -589,6 +600,9 @@ const AuditoriumsList = () => {
                 <TableCell>Zone</TableCell>
                 <TableCell>Featured</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Password</TableCell>
+                <TableCell>Confirm Password</TableCell>
                 <TableCell>Action</TableCell>
               </TableRow>
             </TableHead>
@@ -621,6 +635,9 @@ const AuditoriumsList = () => {
                       />
                       {toggleLoading[statusToggleKey] && <CircularProgress size={16} sx={{ ml: 1 }} />}
                     </TableCell>
+                    <TableCell>{auditorium.ownerEmail}</TableCell>
+                    <TableCell>{auditorium.password}</TableCell>
+                    <TableCell>{auditorium.confirmPassword}</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <IconButton color="primary" onClick={() => alert(`Viewing auditorium: ${auditorium.storeInfo}`)}>
                         <VisibilityOutlined />
