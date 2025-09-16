@@ -39,7 +39,7 @@ const Paymentfailed = Loadable(lazy(() => import('../views/Paymentfailed')));
 const Createnew = Loadable(lazy(() => import('../views/Createnew')));
 const Vehiclelist = Loadable(lazy(() => import('../views/Vehiclelist')));
 
-
+const AddModule = Loadable(lazy(() => import('../views/AddModule')));
 
 const Brands = Loadable(lazy(() => import('../views/Brands')));
 
@@ -119,39 +119,39 @@ const MainRoutes = {
 
     // Trips
 
-{ path: 'trips/alltrips', element: <AllTrips /> },
-{ path: 'trips/scheduled', element: <Scheduled /> },
-{ path: 'trips/pending', element: <Pending /> },
-{ path: 'trips/confirmed', element: <Confirmed /> },
-{ path: 'trips/ongoing', element: <Ongoing /> },
-{ path: 'trips/completed', element: <Completed /> },
-{ path: 'trips/cancelled', element: <Cancelled /> },
-{ path: 'trips/paymentfailed', element: <Paymentfailed /> },
+    { path: 'trips/alltrips', element: <AllTrips /> },
+    { path: 'trips/scheduled', element: <Scheduled /> },
+    { path: 'trips/pending', element: <Pending /> },
+    { path: 'trips/confirmed', element: <Confirmed /> },
+    { path: 'trips/ongoing', element: <Ongoing /> },
+    { path: 'trips/completed', element: <Completed /> },
+    { path: 'trips/cancelled', element: <Cancelled /> },
+    { path: 'trips/paymentfailed', element: <Paymentfailed /> },
 
-// { path: '/vehicles/create', element: <Createnew /> },
-
-
-// Bookingssss
-
-{ path: 'bookings/all', element: <Allbookings /> },
-{ path: 'bookings/scheduled', element: <Scheduledbookings /> },
-{ path: 'bookings/Pending', element: <Pendingbookings /> },
-{ path: 'bookings/confirmed', element: <Confirmedbookings /> },
-{ path: 'bookings/ongoing', element: <Ongoingbookings /> },
-{ path: 'bookings/completed', element: <Completedbookings /> },
-{ path: 'bookings/cancelled', element: <Cancelledbookings /> },
-{ path: 'bookings/paymentfailedbookings', element: <Paymentfailedbookings /> },
+    // { path: '/vehicles/create', element: <Createnew /> },
 
 
+    // Bookingssss
+
+    { path: 'bookings/all', element: <Allbookings /> },
+    { path: 'bookings/scheduled', element: <Scheduledbookings /> },
+    { path: 'bookings/Pending', element: <Pendingbookings /> },
+    { path: 'bookings/confirmed', element: <Confirmedbookings /> },
+    { path: 'bookings/ongoing', element: <Ongoingbookings /> },
+    { path: 'bookings/completed', element: <Completedbookings /> },
+    { path: 'bookings/cancelled', element: <Cancelledbookings /> },
+    { path: 'bookings/paymentfailedbookings', element: <Paymentfailedbookings /> },
 
 
 
-  // Vehicles - Category
+
+
+    // Vehicles - Category
     { path: 'vehicles/category', element: <Category /> },
-    { path: 'vehicles/category/edit/:id', element: <EditCategory /> }, 
+    { path: 'vehicles/category/edit/:id', element: <EditCategory /> },
     { path: 'vehicles/create', element: <Createnew /> },
     { path: 'vehicles/list', element: <Vehiclelist /> },
-        { path: 'vehicles/brands', element: < Brands/> },
+    { path: 'vehicles/brands', element: < Brands /> },
 
 
 
@@ -167,19 +167,22 @@ const MainRoutes = {
     { path: 'auditorium/addprovider', element: <Auditoriumaddprovider /> },
     { path: 'auditorium/auditoriumlist', element: <Auditoriumlist /> },
     { path: 'auditorium/create', element: <Createauditorium /> },
-        { path: 'auditorium/venuelist', element: <Venuelist /> },
+    { path: 'auditorium/venuelist', element: <Venuelist /> },
 
-        { path: 'auditorium/brands', element: <Auditoriumbrands /> },
-
-
+    { path: 'auditorium/brands', element: <Auditoriumbrands /> },
 
 
 
- 
+
+
+
 
     { path: 'rental/dashboard', element: <DashboardDefault /> },
 
     { path: 'events/dashboard', element: <DashboardDefault /> },
+
+    //module
+    { path: 'module/add', element: <AddModule /> }
   ]
 };
 

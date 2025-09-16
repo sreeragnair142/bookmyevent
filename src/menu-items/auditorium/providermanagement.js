@@ -36,7 +36,8 @@ const Providermanagement = {
       url: '/auditorium/auditoriumlist',
       icon: icons.IconTools,
       breadcrumbs: false
-    }
+    },
+     
   ]
 };
 

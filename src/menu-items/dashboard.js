@@ -18,6 +18,14 @@ const dashboard = {
       url: '/',
       icon: icons.IconDashboard,
       breadcrumbs: false
+    },
+    {
+      id: 'Add vendor',
+      title: 'Add vendor',
+      type: 'item',
+      url: '/auditorium/vendor',
+      icon: icons.IconTools,
+      breadcrumbs: false
     }
   ]
 };

@@ -25,7 +25,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 // API base URL (for Vite projects)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://147.93.27.213:9091/api';
 
 export default function AuthLogin() {
   const theme = useTheme();
@@ -43,13 +43,13 @@ export default function AuthLogin() {
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleMouseDownPassword = (event) => event.preventDefault();
 
-  // API call to login
+  // API call to login using fetch
   const loginUser = async (credentials) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
       });
@@ -57,12 +57,12 @@ export default function AuthLogin() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.message || "Login failed");
+        throw new Error(data.message || 'Login failed');
       }
 
       return data;
     } catch (error) {
-      throw new Error(error.message || "Network error occurred");
+      throw new Error(error.message || 'Network error occurred');
     }
   };
 
@@ -103,7 +103,8 @@ export default function AuthLogin() {
         }
 
         // Redirect based on role
-        const userRole = response.data.user.role;
+        // Backend populates role as an object, so use role.name
+        const userRole = response.data.user.role.name;
         if (userRole === 'superadmin') {
           navigate('/superadmin-dashboard');
         } else {
@@ -113,7 +114,7 @@ export default function AuthLogin() {
         setError(response.message || 'Login failed');
       }
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -172,11 +173,11 @@ export default function AuthLogin() {
         <Grid>
           <FormControlLabel
             control={
-              <Checkbox 
-                checked={checked} 
-                onChange={(event) => setChecked(event.target.checked)} 
-                name="checked" 
-                color="primary" 
+              <Checkbox
+                checked={checked}
+                onChange={(event) => setChecked(event.target.checked)}
+                name="checked"
+                color="primary"
                 disabled={loading}
               />
             }
@@ -184,7 +185,13 @@ export default function AuthLogin() {
           />
         </Grid>
         <Grid>
-          <Typography variant="subtitle1" component={Link} to="/forgot-password" color="secondary" sx={{ textDecoration: 'none' }}>
+          <Typography
+            variant="subtitle1"
+            component={Link}
+            to="/forgot-password"
+            color="secondary"
+            sx={{ textDecoration: 'none' }}
+          >
             Forgot Password?
           </Typography>
         </Grid>
@@ -192,11 +199,11 @@ export default function AuthLogin() {
 
       <Box sx={{ mt: 2 }}>
         <AnimateButton>
-          <Button 
-            color="secondary" 
-            fullWidth 
-            size="large" 
-            type="submit" 
+          <Button
+            color="secondary"
+            fullWidth
+            size="large"
+            type="submit"
             variant="contained"
             disabled={loading}
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}

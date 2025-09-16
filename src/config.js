@@ -18,7 +18,7 @@ export const DASHBOARD_PATH = '/sample-page';
 const config = {
   fontFamily: `'Poppins', sans-serif`,
   borderRadius: 15,
-  mode: 'dark',
+  mode: 'light',
   outlinedFilled: true,
   presetColor: 'default',
 };

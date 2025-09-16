@@ -9,38 +9,29 @@ import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Divider from '@mui/material/Divider';
-
 // project imports
 import LogoSection from '../LogoSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
-
 // icons
 import { IconMenu2, IconHome, IconBuildingSkyscraper, IconCalendarEvent, IconPlus } from '@tabler/icons-react';
-
 export default function Header() {
   const theme = useTheme();
   const navigate = useNavigate();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
-
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
-
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
-
   const handleClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
-
   const handleAddModule = () => {
-    console.log('Add new module clicked');
+    navigate('/module/add');
     handleClose();
   };
-
   const handleModuleClick = (moduleLabel) => {
     console.log(`${moduleLabel} module clicked`);
-
     // Set the active module in localStorage to persist across page reloads
     const moduleName = moduleLabel.toLowerCase();
     localStorage.setItem('activeModule', moduleName);
@@ -54,19 +45,17 @@ export default function Header() {
     localStorage.setItem('sidebarType', sidebarType);
     
     // Dispatch events to update sidebar and menu with the new module
-    window.dispatchEvent(new CustomEvent('moduleChanged', { 
-      detail: { module: moduleName, sidebarType } 
+    window.dispatchEvent(new CustomEvent('moduleChanged', {
+      detail: { module: moduleName, sidebarType }
     }));
     
-    window.dispatchEvent(new CustomEvent('sidebarTypeChanged', { 
-      detail: { sidebarType } 
+    window.dispatchEvent(new CustomEvent('sidebarTypeChanged', {
+      detail: { sidebarType }
     }));
-
     // Force menu to refresh with new items
     window.dispatchEvent(new CustomEvent('menuItemsChanged', {
       detail: { moduleType: moduleName }
     }));
-
     // Handle different module navigation
     switch (moduleName) {
       case 'rental':
@@ -81,42 +70,37 @@ export default function Header() {
       default:
         console.log(`No route defined for ${moduleLabel}`);
     }
-
     // Force sidebar to refresh/update with new menu items
     window.dispatchEvent(new CustomEvent('refreshSidebar', {
       detail: { moduleType: moduleName }
     }));
-
     // Force page reload to ensure menu items are updated
     setTimeout(() => {
       window.location.reload();
     }, 100);
-
     handleClose();
   };
-
   // Menu items
   const menuItems = [
-    { 
-      label: 'Rental', 
+    {
+      label: 'Rental',
       icon: <IconBuildingSkyscraper size={24} color="#1976d2" />,
       route: '/rental/dashboard',
       sidebarType: 'crm'
     },
-    { 
-      label: 'Events', 
+    {
+      label: 'Events',
       icon: <IconCalendarEvent size={24} color="#1976d2" />,
       route: '/events/dashboard',
       sidebarType: 'crm'
     },
-    { 
+    {
       label: 'Auditorium',
-      icon: <IconHome size={24} color="#1976d2" />, 
+      icon: <IconHome size={24} color="#1976d2" />,
       route: '/auditorium/dashboard',
       sidebarType: 'auditorium'
     },
   ];
-
   return (
     <>
       {/* Logo & toggler */}
@@ -141,9 +125,7 @@ export default function Header() {
           <IconMenu2 stroke={1.5} size="20px" />
         </Avatar>
       </Box>
-
       <Box sx={{ flexGrow: 1 }} />
-
       {/* Demo Module + horizontal dropdown */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {/* Demo Module Button */}
@@ -153,9 +135,8 @@ export default function Header() {
           sx={{ textTransform: 'none', borderRadius: '50px', px: 3, py: 1.5, fontSize: '1rem' }}
           onClick={handleClick}
         >
-          Demo Module
+          Demo Modules
         </Button>
-
         {/* Horizontal dropdown menu */}
         <Menu
           anchorEl={anchorEl}
@@ -199,10 +180,8 @@ export default function Header() {
                 </Button>
               ))}
             </Box>
-
             {/* Divider */}
             <Divider sx={{ mx: 1, my: 1 }} />
-
             {/* Add Module section */}
             <Box sx={{ px: 1, py: 1 }}>
               <Button
@@ -220,7 +199,7 @@ export default function Header() {
                   py: 2,
                   fontSize: '0.95rem',
                   border: '1px dashed #4caf50',
-                  '&:hover': { 
+                  '&:hover': {
                     bgcolor: '#f1f8e9',
                     borderColor: '#388e3c'
                   },
@@ -234,7 +213,6 @@ export default function Header() {
             </Box>
           </Box>
         </Menu>
-
         <NotificationSection />
         <ProfileSection />
       </Box>

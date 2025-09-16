@@ -71,7 +71,8 @@ const ConfigProvider = ({ children }) => {
     borderRadius: 8,
     fontFamily: 'Roboto, sans-serif',
     mode: localStorage.getItem('themeMode') || 
-          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'light'),
+          // (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
     outlinedFilled: true,
     presetColor: 'default'
   });
@@ -79,7 +80,8 @@ const ConfigProvider = ({ children }) => {
   useEffect(() => {
     const handler = (e) => {
       if (!localStorage.getItem('themeMode')) {
-        setConfig((prev) => ({ ...prev, mode: e.matches ? 'dark' : 'light' }));
+        setConfig((prev) => ({ ...prev, mode: e.matches ? 'light' : 'light' }));
+        // setConfig((prev) => ({ ...prev, mode: e.matches ? 'dark' : 'light' }));
       }
     };
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', handler);
@@ -92,7 +94,8 @@ const ConfigProvider = ({ children }) => {
   };
 
   const resetMode = () => {
-    setConfig((prev) => ({ ...prev, mode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' }));
+    setConfig((prev) => ({ ...prev, mode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'light' : 'light' }));
+    // setConfig((prev) => ({ ...prev, mode: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' }));
     localStorage.removeItem('themeMode');
   };
 
